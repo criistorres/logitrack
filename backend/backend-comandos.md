@@ -6,11 +6,20 @@ python -m venv venv
 venv\Scripts\activate  # Windows
 
 # Instalar dependências
-pip install django djangorestframework djangorestframework-simplejwt psycopg2-binary python-decouple django-cors-headers Pillow
+pip install django==4.2.7
+pip install djangorestframework==3.14.0
+pip install djangorestframework-simplejwt==5.3.0
+pip install django-cors-headers==4.3.0
+pip install python-decouple==3.8
+pip install Pillow
+pip install psycopg2-binary
 
-# Criar projeto Django
-django-admin startproject backend .
-cd backend
+# Opcional: salvar as dependências em um arquivo requirements.txt
+pip freeze > requirements.txt
 
-# Criar aplicação para autenticação
+
+# Criar o projeto principal
+django-admin startproject logitrack .
+
+# Criar o app para autenticação e usuários
 python manage.py startapp accounts

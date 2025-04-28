@@ -1,0 +1,106 @@
+# LogiTrack API - Autenticação
+# Este arquivo contém os endpoints de autenticação da API LogiTrack
+# Como usar: Instale a extensão "REST Client" no VS Code e clique em "Send Request" acima de cada requisição
+
+# Variáveis globais
+@baseUrl = http://localhost:8000/api
+@contentType = application/json
+
+# IMPORTANTE: Para usar as requisições que exigem autenticação, você precisa:
+# 1. Fazer login para obter os tokens
+# 2. Copiar manualmente o token de acesso (access) da resposta
+# 3. Substituir o valor da variável abaixo pelo token copiado
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ1ODA1MzEwLCJpYXQiOjE3NDU4MDE2NjEsImp0aSI6IjgwNDc0YTYyMGFlYzRiN2Y5ZWNhNzExNWNhMjBlM2EwIiwidXNlcl9pZCI6M30.-zbkDJT5yEOnZ3zguna-Tx3QTDRd_2LN0yg1wMT0nLU
+@refreshToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0NjQwNjQ2MSwiaWF0IjoxNzQ1ODAxNjYxLCJqdGkiOiJlZGQxMGI1ZjY4NTk0Zjk2OWUwMTliYTI3MmZkNWI4ZCIsInVzZXJfaWQiOjN9.Co6w3TLelcXTvYvJjc6yxjXOHb-dKaN6UuQS69ov3VM
+
+### 1. Registro de usuário (Signup)
+# Cria um novo usuário no sistema e retorna tokens de autenticação
+POST {{baseUrl}}/auth/signup/ HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "email": "motorista2@exemplo.com",
+    "cpf": "12345678902",
+    "password": "Senha@123",
+    "password_confirm": "Senha@123",
+    "first_name": "João",
+    "last_name": "Silva",
+    "role": "motorista",
+    "phone": "11987654321",
+    "cnh_numero": "1234567890",
+    "cnh_categoria": "AB",
+    "cnh_validade": "2025-01-01"
+}
+
+### 2. Login (Obter token JWT via /token/)
+# Obtém um par de tokens JWT (access e refresh) através de credenciais
+POST {{baseUrl}}/auth/token/ HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "email": "motorista2@exemplo.com",
+    "password": "Senha@123"
+}
+
+### 3. Login (Obter token JWT via /login/)
+# Alternativa ao endpoint /token/ (faz a mesma coisa)
+POST {{baseUrl}}/auth/login/ HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "email": "motorista@exemplo.com",
+    "password": "Senha@123"
+}
+
+### 4. Atualizar token (refresh)
+# Use quando o token de acesso expirar, mas o refresh token ainda for válido
+# IMPORTANTE: Substitua o valor da variável @refreshToken pelo seu refresh token
+POST {{baseUrl}}/auth/token/refresh/ HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "refresh": "{{refreshToken}}"
+}
+
+### 5. Logout
+# Invalida o refresh token, realizando o logout do usuário
+# IMPORTANTE: Substitua @accessToken e @refreshToken pelos seus tokens
+POST {{baseUrl}}/auth/logout/ HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+    "refresh": "{{refreshToken}}"
+}
+
+### 6. Registrar usuário com perfil de logística
+# Exemplo de criação de usuário com outro perfil (logística)
+POST {{baseUrl}}/auth/signup/ HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "email": "logistica@exemplo.com",
+    "cpf": "98765432101",
+    "password": "Senha@123",
+    "password_confirm": "Senha@123",
+    "first_name": "Maria",
+    "last_name": "Oliveira",
+    "role": "logistica",
+    "phone": "11998765432"
+}
+
+### 7. Registrar usuário com perfil de administrador
+# Exemplo de criação de usuário administrador
+POST {{baseUrl}}/auth/signup/ HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "email": "admin@exemplo.com",
+    "cpf": "11122233344",
+    "password": "Senha@123",
+    "password_confirm": "Senha@123",
+    "first_name": "Admin",
+    "last_name": "Sistema",
+    "role": "admin",
+    "phone": "11955554444"
+}

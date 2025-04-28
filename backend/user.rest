@@ -1,0 +1,42 @@
+# LogiTrack API - Gerenciamento de Usuários
+# Este arquivo contém os endpoints para gerenciamento de usuários da API LogiTrack
+# Como usar: Instale a extensão "REST Client" no VS Code e clique em "Send Request" acima de cada requisição
+
+# Variáveis globais
+@baseUrl = http://localhost:8000/api
+@contentType = application/json
+
+# IMPORTANTE: Para usar as requisições que exigem autenticação, você precisa:
+# 1. Fazer login usando o arquivo auth.rest para obter os tokens
+# 2. Copiar manualmente o token de acesso (access) da resposta
+# 3. Substituir o valor da variável abaixo pelo token copiado
+@accessToken = SEU_ACCESS_TOKEN_AQUI
+
+### 1. Obter dados do usuário autenticado
+# Retorna os dados do usuário que possui o token informado
+# IMPORTANTE: Substitua @accessToken pelo seu token de acesso
+GET {{baseUrl}}/auth/user/ HTTP/1.1
+Authorization: Bearer {{accessToken}}
+
+### 2. Atualizar dados do usuário
+# Atualiza os dados do usuário autenticado
+# Todos os campos são opcionais - envie apenas os que deseja atualizar
+# IMPORTANTE: Substitua @accessToken pelo seu token de acesso
+PATCH {{baseUrl}}/auth/user/ HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+    "first_name": "João Atualizado",
+    "last_name": "Silva Modificado",
+    "phone": "11999887766",
+    "cnh_numero": "9876543210",
+    "cnh_categoria": "ABCD",
+    "cnh_validade": "2026-01-01"
+}
+
+# Observações:
+# 1. Não é possível alterar email, CPF e role através deste endpoint
+# 2. Para alterar a senha, use o endpoint específico no arquivo password.rest
+# 3. Para atualizar a foto de perfil, será necessário usar multipart/form-data 
+#    (será implementado posteriormente)
