@@ -28,12 +28,14 @@ logitrack/
 2. Implementar navegação básica (React Navigation)
 3. Criar estrutura de pastas
 4. Configurar cliente HTTP (Axios)
+5. Usar tailwind
 
 **Frontend (Web):**
 1. Configurar projeto React
 2. Implementar estrutura de pastas
 3. Configurar cliente HTTP (Axios)
 4. Implementar gerenciamento de estado básico (Redux ou Context API)
+5. Usar tailwind
 
 ### Etapa 1.2: Sistema de Autenticação
 
