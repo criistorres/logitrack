@@ -24,7 +24,7 @@ logitrack/
 4. Configurar sistema de autenticação JWT
 
 **Mobile:**
-1. Configurar projeto React Native e Expo
+1. Configurar projeto React Native, Expo e TypeScript
 2. Implementar navegação básica (React Navigation)
 3. Criar estrutura de pastas
 4. Configurar cliente HTTP (Axios)
