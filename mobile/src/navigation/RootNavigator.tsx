@@ -1,59 +1,74 @@
 // src/navigation/RootNavigator.tsx
 
-import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import React from 'react';
+import { Text, View } from 'react-native';
+import { LoadingSpinner } from '../components/ui';
+import { useAuth } from '../contexts/AuthContext';
+import HomeScreen from '../screens/HomeScreen';
+import AuthNavigator from './AuthNavigator';
 
-// Importar telas (vamos criar depois)
-import LoginScreen from '../screens/LoginScreen';
-import HomeScreen from '../screens/HomeScreen'
+// ==============================================================================
+// 🌐 NAVEGADOR PRINCIPAL CORRIGIDO
+// ==============================================================================
 
-// Definir tipos para as rotas
-export type RootStackParamList = {
-  Login: undefined;
-  Home: undefined;
-};
-
-// Criar o Stack Navigator
-const Stack = createStackNavigator<RootStackParamList>();
-
-/**
- * Navegador principal da aplicação
- * Gerencia a navegação entre telas
- */
 export default function RootNavigator() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  
+  console.log('🗺️ RootNavigator: Estado atual', {
+    isAuthenticated,
+    isLoading,
+    userEmail: user?.email
+  });
+  
+  // Tela de carregamento enquanto verifica autenticação
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+  
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="Login"
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: '#3b82f6', // bg-blue-500
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-        }}
-      >
-        {/* Tela de Login */}
-        <Stack.Screen 
-          name="Login" 
-          component={LoginScreen}
-          options={{
-            headerShown: false, // Esconder header na tela de login
-          }}
-        />
-        
-        {/* Tela Home */}
-        <Stack.Screen 
-          name="Home" 
-          component={HomeScreen}
-          options={{
-            title: 'LogiTrack',
-          }}
-        />
-      </Stack.Navigator>
+      {isAuthenticated ? (
+        // Usuário autenticado - mostrar tela principal diretamente
+        <HomeScreen />
+      ) : (
+        // Usuário não autenticado - mostrar navegador de auth
+        <AuthNavigator />
+      )}
     </NavigationContainer>
+  );
+}
+
+// ==============================================================================
+// ⏳ TELA DE CARREGAMENTO
+// ==============================================================================
+
+function LoadingScreen() {
+  return (
+    <View className="flex-1 bg-white items-center justify-center">
+      {/* Logo */}
+      <View className="w-20 h-20 bg-blue-500 rounded-full items-center justify-center mb-6">
+        <Text className="text-white text-2xl font-bold">🚛</Text>
+      </View>
+      
+      {/* Título */}
+      <Text className="text-2xl font-bold text-gray-900 mb-2">
+        LogiTrack
+      </Text>
+      
+      <Text className="text-gray-600 mb-8">
+        Carregando...
+      </Text>
+      
+      {/* Spinner */}
+      <LoadingSpinner size="large" color="#3b82f6" />
+      
+      {/* Informações de carregamento */}
+      <View className="mt-8 px-8">
+        <Text className="text-gray-500 text-sm text-center">
+          Verificando suas credenciais...
+        </Text>
+      </View>
+    </View>
   );
 }

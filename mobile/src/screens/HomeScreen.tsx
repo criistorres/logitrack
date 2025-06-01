@@ -1,86 +1,120 @@
-// src/screens/HomeScreen.tsx
+// src/screens/HomeScreen.tsx - VERSÃO SIMPLES TEMPORÁRIA
 
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/RootNavigator';
-
-// Tipagem da navegação
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
-
-interface Props {
-  navigation: HomeScreenNavigationProp;
-}
+import { useAuth } from '../contexts/AuthContext';
 
 /**
- * Tela Home - Dashboard principal
- * Mostra informações básicas e navegação
+ * Tela Home - Versão Simples para Teste
  */
-export default function HomeScreen({ navigation }: Props) {
-  const handleLogout = () => {
-    // Voltar para login
-    navigation.navigate('Login');
+export default function HomeScreen() {
+  const { user, logout } = useAuth();
+  
+  const handleLogout = async () => {
+    Alert.alert(
+      'Sair',
+      'Tem certeza que deseja sair do aplicativo?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: async () => {
+            console.log('🚪 HomeScreen: Fazendo logout...');
+            await logout();
+          }
+        }
+      ]
+    );
   };
-
+  
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-      <ScrollView className="flex-1">
-        <View className="p-4">
-          {/* Header de Boas-vindas */}
-          <View className="bg-white rounded-lg p-4 shadow-sm mb-4">
-            <Text className="text-gray-800 text-xl font-bold">
-              Olá, Motorista!
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      <View style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}>
+        {/* Header de Boas-vindas */}
+        <View style={{ 
+          backgroundColor: 'white', 
+          borderRadius: 10, 
+          padding: 20, 
+          marginBottom: 30,
+          width: '100%',
+          alignItems: 'center'
+        }}>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>
+            🎉 Login realizado com sucesso!
+          </Text>
+          <Text style={{ fontSize: 18, marginBottom: 10 }}>
+            Olá, {user?.first_name || 'Usuário'}! 👋
+          </Text>
+          <Text style={{ fontSize: 16, color: '#666' }}>
+            Bem-vindo ao LogiTrack
+          </Text>
+          
+          {/* Informações do usuário */}
+          <View style={{ 
+            backgroundColor: '#f0f0f0', 
+            borderRadius: 5, 
+            padding: 15, 
+            marginTop: 15,
+            width: '100%'
+          }}>
+            <Text style={{ fontSize: 14, marginBottom: 5 }}>
+              <Text style={{ fontWeight: 'bold' }}>Email:</Text> {user?.email}
             </Text>
-            <Text className="text-gray-600 text-sm mt-1">
-              Bem-vindo ao LogiTrack
+            <Text style={{ fontSize: 14, marginBottom: 5 }}>
+              <Text style={{ fontWeight: 'bold' }}>Função:</Text> {user?.role}
+            </Text>
+            <Text style={{ fontSize: 14 }}>
+              <Text style={{ fontWeight: 'bold' }}>Status:</Text> {user?.is_active ? 'Ativo' : 'Inativo'}
             </Text>
           </View>
-          
-          {/* Cards de Status */}
-          <View className="flex-row justify-between mb-4">
-            <View className="bg-blue-500 rounded-lg p-4 flex-1 mr-2">
-              <Text className="text-white text-2xl font-bold">0</Text>
-              <Text className="text-blue-100 text-sm">OTs Ativas</Text>
-            </View>
-            
-            <View className="bg-green-500 rounded-lg p-4 flex-1 ml-2">
-              <Text className="text-white text-2xl font-bold">0</Text>
-              <Text className="text-green-100 text-sm">Entregas Hoje</Text>
-            </View>
-          </View>
-          
-          {/* Menu de Opções */}
-          <View className="bg-white rounded-lg shadow-sm">
-            <TouchableOpacity className="p-4 border-b border-gray-200">
-              <Text className="text-gray-800 font-semibold">📦 Nova OT</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity className="p-4 border-b border-gray-200">
-              <Text className="text-gray-800 font-semibold">📋 Minhas OTs</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity className="p-4 border-b border-gray-200">
-              <Text className="text-gray-800 font-semibold">🔍 Buscar por NF</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity className="p-4">
-              <Text className="text-gray-800 font-semibold">👤 Meu Perfil</Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Botão de Logout */}
-          <TouchableOpacity
-            onPress={handleLogout}
-            className="bg-red-500 rounded-lg p-4 mt-6"
-            activeOpacity={0.8}
-          >
-            <Text className="text-white text-center font-bold">
-              Sair do App
-            </Text>
-          </TouchableOpacity>
         </View>
-      </ScrollView>
+        
+        {/* Cards de Status */}
+        <View style={{ flexDirection: 'row', marginBottom: 30 }}>
+          <View style={{ 
+            backgroundColor: '#3b82f6', 
+            borderRadius: 10, 
+            padding: 20, 
+            flex: 1, 
+            marginRight: 10,
+            alignItems: 'center'
+          }}>
+            <Text style={{ color: 'white', fontSize: 24, fontWeight: 'bold' }}>0</Text>
+            <Text style={{ color: '#bfdbfe', fontSize: 12 }}>OTs Ativas</Text>
+          </View>
+          
+          <View style={{ 
+            backgroundColor: '#10b981', 
+            borderRadius: 10, 
+            padding: 20, 
+            flex: 1, 
+            marginLeft: 10,
+            alignItems: 'center'
+          }}>
+            <Text style={{ color: 'white', fontSize: 24, fontWeight: 'bold' }}>0</Text>
+            <Text style={{ color: '#a7f3d0', fontSize: 12 }}>Entregas Hoje</Text>
+          </View>
+        </View>
+        
+        {/* Botão de Logout */}
+        <TouchableOpacity
+          onPress={handleLogout}
+          style={{
+            backgroundColor: '#ef4444',
+            paddingVertical: 15,
+            paddingHorizontal: 30,
+            borderRadius: 8,
+            width: '100%',
+            alignItems: 'center'
+          }}
+        >
+          <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>
+            🚪 Sair do App
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
