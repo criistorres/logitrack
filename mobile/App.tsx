@@ -1,20 +1,18 @@
-﻿import React from 'react';
-import { View, Text } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-// import './global.css'; // ← Comentar temporariamente
+﻿// App.tsx
 
+import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import RootNavigator from './src/navigation/RootNavigator';
+import './global.css';
+
+/**
+ * Componente principal da aplicação
+ * Configura o contexto de gestos e inicia a navegação
+ */
 export default function App() {
   return (
-    <View className="flex-1 bg-red-500 justify-center items-center">
-      <StatusBar style="light" />
-      
-      <Text className="text-white text-xl font-bold">
-        🔴 Testando sem import CSS
-      </Text>
-      
-      <Text className="text-white text-sm mt-4">
-        Se funcionar, problema é no global.css
-      </Text>
-    </View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <RootNavigator />
+    </GestureHandlerRootView>
   );
 }
