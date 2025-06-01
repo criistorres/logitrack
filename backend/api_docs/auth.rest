@@ -1,0 +1,631 @@
+# ==============================================================================
+# LOGITRACK - DOCUMENTAÇÃO DA API DE AUTENTICAÇÃO
+# ==============================================================================
+# 
+# 📋 INSTRUÇÕES:
+# 1. Instale a extensão "REST Client" no VS Code
+# 2. Execute cada requisição clicando em "Send Request" acima de cada ###
+# 3. Acompanhe as respostas e use para debugging
+# 4. IMPORTANTE: Execute na ordem indicada para melhor experiência
+#
+# 🎯 ORDEM RECOMENDADA PARA TESTES:
+# 1. Listar endpoints disponíveis
+# 2. Registrar um usuário
+# 3. Fazer login
+# 4. Ver perfil do usuário
+# 5. Atualizar perfil
+# 6. Fazer logout
+#
+# ==============================================================================
+
+# VARIÁVEIS GLOBAIS (atualize conforme necessário)
+@baseURL = http://localhost:8000
+@authURL = {{baseURL}}/api/auth
+
+# Variáveis para tokens (serão preenchidas automaticamente após login)
+@accessToken = 
+@refreshToken = 
+
+# ==============================================================================
+# 🏠 1. ENDPOINT RAIZ - INFORMAÇÕES DA API
+# ==============================================================================
+
+### 1.1 Verificar se API está funcionando
+GET {{baseURL}}
+Content-Type: application/json
+
+# Esperado: Informações básicas da API e lista de endpoints
+
+
+# ==============================================================================
+# 📋 2. LISTAR ENDPOINTS DISPONÍVEIS (DEBUGGING)
+# ==============================================================================
+
+### 2.1 Ver todos os endpoints de autenticação
+GET {{authURL}}/endpoints/
+Content-Type: application/json
+
+# Esperado: Lista completa de todos os endpoints disponíveis
+
+
+# ==============================================================================
+# 📝 3. REGISTRO DE USUÁRIO
+# ==============================================================================
+
+### 3.1 Registrar novo usuário (TESTE BÁSICO)
+POST {{authURL}}/register/
+Content-Type: application/json
+
+{
+    "email": "motorista1@teste.com",
+    "password": "senha123456",
+    "password_confirm": "senha123456",
+    "first_name": "João",
+    "last_name": "Silva",
+    "cpf": "12345678901",
+    "phone": "11999999999",
+    "role": "motorista",
+    "cnh_numero": "12345678901",
+    "cnh_categoria": "B",
+    "cnh_validade": "2025-12-31"
+}
+
+# Esperado: 
+# - Status 201 Created
+# - Dados do usuário criado
+# - Access token e refresh token
+# 
+# 🐛 DEBUGGING: 
+# - Coloque breakpoint em RegisterView.post()
+# - Acompanhe o fluxo pelos métodos validate do serializer
+
+
+### 3.2 Registrar usuário da logística
+POST {{authURL}}/register/
+Content-Type: application/json
+
+{
+    "email": "logistica1@teste.com",
+    "password": "senha123456",
+    "password_confirm": "senha123456",
+    "first_name": "Maria",
+    "last_name": "Santos",
+    "cpf": "10987654321",
+    "phone": "11888888888",
+    "role": "logistica"
+}
+
+### 3.3 Teste de erro - senhas não coincidem
+POST {{authURL}}/register/
+Content-Type: application/json
+
+{
+    "email": "erro1@teste.com",
+    "password": "senha123456",
+    "password_confirm": "senha654321",
+    "first_name": "Teste",
+    "last_name": "Erro",
+    "cpf": "11111111111"
+}
+
+# Esperado: 
+# - Status 400 Bad Request
+# - Erro: "As senhas não coincidem"
+
+### 3.4 Teste de erro - email duplicado
+POST {{authURL}}/register/
+Content-Type: application/json
+
+{
+    "email": "motorista1@teste.com",
+    "password": "senha123456",
+    "password_confirm": "senha123456",
+    "first_name": "Duplicado",
+    "last_name": "Email",
+    "cpf": "22222222222"
+}
+
+# Esperado: 
+# - Status 400 Bad Request
+# - Erro: "Este email já está em uso"
+
+
+# ==============================================================================
+# 🔐 4. LOGIN
+# ==============================================================================
+
+### 4.1 Login com usuário válido
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "motorista1@teste.com",
+    "password": "senha123456"
+}
+
+# Esperado:
+# - Status 200 OK
+# - Access token e refresh token
+# - Dados do usuário
+#
+# 🚨 IMPORTANTE: Copie o access_token da resposta para usar nos próximos testes
+#
+# 🐛 DEBUGGING:
+# - Coloque breakpoint em LoginView.post()
+# - Acompanhe como o authenticate() funciona no serializer
+
+### 4.2 Login com credenciais inválidas
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "motorista1@teste.com",
+    "password": "senhaerrada"
+}
+
+# Esperado:
+# - Status 401 Unauthorized
+# - Erro: "Credenciais inválidas"
+
+### 4.3 Login com email inexistente
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "naoexiste@teste.com",
+    "password": "senha123456"
+}
+
+# Esperado:
+# - Status 401 Unauthorized
+# - Erro: "Credenciais inválidas"
+
+
+# ==============================================================================
+# 👤 5. PERFIL DO USUÁRIO (REQUER AUTENTICAÇÃO)
+# ==============================================================================
+
+### 5.1 Ver dados do usuário logado
+GET {{authURL}}/user/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SEU_TOKEN_AQUI
+Content-Type: application/json
+
+# 🚨 SUBSTITUA "SEU_TOKEN_AQUI" pelo access_token obtido no login!
+#
+# Esperado:
+# - Status 200 OK
+# - Dados completos do usuário
+#
+# 🐛 DEBUGGING:
+# - Coloque breakpoint em UserProfileView.get()
+# - Observe como request.user é populado automaticamente pelo JWT
+
+### 5.2 Atualizar dados do usuário
+PUT {{authURL}}/user/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SEU_TOKEN_AQUI
+Content-Type: application/json
+
+{
+    "first_name": "João Atualizado",
+    "last_name": "Silva Santos",
+    "phone": "11999998888"
+}
+
+# Esperado:
+# - Status 200 OK
+# - Dados atualizados do usuário
+#
+# 🐛 DEBUGGING:
+# - Coloque breakpoint em UserProfileView.update()
+# - Acompanhe o método update() do serializer
+
+### 5.3 Teste sem token (deve dar erro)
+GET {{authURL}}/user/
+Content-Type: application/json
+
+# Esperado:
+# - Status 401 Unauthorized
+# - Erro de autenticação
+
+
+# ==============================================================================
+# 🛠️ 6. ENDPOINTS DE DEBUGGING
+# ==============================================================================
+
+### 6.1 Ver informações detalhadas do usuário logado
+GET {{authURL}}/debug/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SEU_TOKEN_AQUI
+Content-Type: application/json
+
+# Esperado:
+# - Informações técnicas do usuário
+# - Info sobre o token JWT
+# - Útil para debugging
+
+
+# ==============================================================================
+# 🔄 7. REFRESH TOKEN
+# ==============================================================================
+
+### 7.1 Renovar access token usando refresh token
+POST {{authURL}}/token/refresh/
+Content-Type: application/json
+
+{
+    "refresh": "SEU_REFRESH_TOKEN_AQUI"
+}
+
+# 🚨 SUBSTITUA "SEU_REFRESH_TOKEN_AQUI" pelo refresh_token obtido no login!
+#
+# Esperado:
+# - Status 200 OK
+# - Novo access token
+
+
+# ==============================================================================
+# 🚪 8. LOGOUT
+# ==============================================================================
+
+### 8.1 Fazer logout (blacklist do refresh token)
+POST {{authURL}}/logout/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SEU_TOKEN_AQUI
+Content-Type: application/json
+
+{
+    "refresh": "SEU_REFRESH_TOKEN_AQUI"
+}
+
+# Esperado:
+# - Status 200 OK
+# - Confirmação de logout
+# - O refresh token deve ficar inválido após isso
+
+### 8.2 Tentar usar refresh token após logout (deve dar erro)
+POST {{authURL}}/token/refresh/
+Content-Type: application/json
+
+{
+    "refresh": "SEU_REFRESH_TOKEN_AQUI"
+}
+
+# Esperado:
+# - Status 401 Unauthorized
+# - Token está na blacklist
+
+
+# ==============================================================================
+# 🔄 9. RESET DE SENHA
+# ==============================================================================
+
+### 9.1 Solicitar reset de senha
+POST {{authURL}}/password/reset/
+Content-Type: application/json
+
+{
+    "email": "ctorres@beautyservices.com.br"
+}
+
+# Esperado:
+# - Status 200 OK
+# - Mensagem sobre envio do email (simulado)
+
+### 9.2 Confirmar nova senha
+POST {{authURL}}/password/confirm/
+Content-Type: application/json
+
+{
+    "email": "motorista1@teste.com",
+    "new_password": "novaSenha123456",
+    "confirm_password": "novaSenha123456"
+}
+
+# Esperado:
+# - Status 200 OK
+# - Confirmação de senha alterada
+
+### 9.3 Testar login com nova senha
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "motorista1@teste.com",
+    "password": "novaSenha123456"
+}
+
+# Esperado:
+# - Status 200 OK
+# - Login bem-sucedido com nova senha
+
+
+# ==============================================================================
+# 👥 11. GERENCIAMENTO DE USUÁRIOS (LOGÍSTICA/ADMIN)
+# ==============================================================================
+
+### 11.1 Listar todos os usuários (requer logística/admin)
+GET {{authURL}}/users/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SEU_TOKEN_AQUI
+Content-Type: application/json
+
+# 🚨 SUBSTITUA pelo token de um usuário logística ou admin!
+#
+# Esperado:
+# - Status 200 OK se for logística/admin
+# - Status 403 Forbidden se for motorista
+# - Lista de usuários (logística não vê admins)
+
+### 11.2 Ver detalhes de um usuário específico
+GET {{authURL}}/users/1/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SEU_TOKEN_AQUI
+Content-Type: application/json
+
+# Esperado:
+# - Status 200 OK se for o próprio usuário, logística ou admin
+# - Status 403 Forbidden se for outro motorista
+
+### 11.3 Ativar um usuário (requer logística/admin)
+PATCH {{authURL}}/users/1/activate/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SEU_TOKEN_AQUI
+Content-Type: application/json
+
+# Esperado:
+# - Status 200 OK com confirmação
+# - Usuário fica ativo (is_active: true)
+#
+# 🐛 DEBUGGING:
+# - Coloque breakpoint em UserActivationView.patch()
+# - Observe verificação de permissões
+# - Acompanhe mudança no banco de dados
+
+### 11.4 Desativar um usuário (requer logística/admin)
+PATCH {{authURL}}/users/2/deactivate/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SEU_TOKEN_AQUI
+Content-Type: application/json
+
+# Esperado:
+# - Status 200 OK com confirmação
+# - Usuário fica inativo (is_active: false)
+# - Não pode desativar própria conta
+
+### 11.5 Teste de permissão - motorista tentando listar usuários (deve dar erro)
+GET {{authURL}}/users/
+Authorization: Bearer TOKEN_DE_MOTORISTA_AQUI
+Content-Type: application/json
+
+# Esperado:
+# - Status 403 Forbidden
+# - Mensagem sobre permissões insuficientes
+
+### 11.6 Teste de permissão - logística tentando ativar admin (deve dar erro)
+PATCH {{authURL}}/users/ID_DE_ADMIN/activate/
+Authorization: Bearer TOKEN_DE_LOGISTICA_AQUI
+Content-Type: application/json
+
+# Esperado:
+# - Status 403 Forbidden
+# - Mensagem sobre não poder modificar admins
+
+
+# ==============================================================================
+# 🔐 12. TESTES DE PERMISSÕES AVANÇADOS
+# ==============================================================================
+
+### 12.1 Teste endpoint restrito a logística/admin
+GET {{authURL}}/debug/permissions/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SEU_TOKEN_AQUI
+Content-Type: application/json
+
+# 🚨 Use token de logística ou admin
+# Esperado:
+# - Status 200 OK se for logística/admin
+# - Status 403 Forbidden se for motorista
+
+### 12.2 Teste com motorista (deve dar erro)
+GET {{authURL}}/debug/permissions/
+Authorization: Bearer TOKEN_DE_MOTORISTA_AQUI
+Content-Type: application/json
+
+# Esperado:
+# - Status 403 Forbidden
+# - Verificar logs de permissão
+
+
+# ==============================================================================
+# 🎯 13. FLUXO COMPLETO: ADMIN GERENCIANDO USUÁRIOS
+# ==============================================================================
+
+### 13.1 Fazer login como admin
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "admin@teste.com",
+    "password": "admin123456"
+}
+
+# Copie o access_token para usar nos próximos testes
+
+### 13.2 Listar todos os usuários
+GET {{authURL}}/users/
+Authorization: Bearer SEU_TOKEN_ADMIN
+Content-Type: application/json
+
+### 13.3 Registrar novo usuário (que ficará inativo)
+POST {{authURL}}/register/
+Content-Type: application/json
+
+{
+    "email": "motorista.inativo@teste.com",
+    "password": "senha123456",
+    "password_confirm": "senha123456",
+    "first_name": "Motorista",
+    "last_name": "Inativo",
+    "cpf": "55555555555",
+    "phone": "11555555555",
+    "role": "motorista",
+    "cnh_numero": "55555555555",
+    "cnh_categoria": "B",
+    "cnh_validade": "2025-12-31"
+}
+
+### 13.4 Tentar fazer login com usuário inativo (deve dar erro)
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "motorista.inativo@teste.com",
+    "password": "senha123456"
+}
+
+# Esperado: Erro por conta desativada
+
+### 13.5 Ativar o usuário como admin
+PATCH {{authURL}}/users/ID_DO_USUARIO_CRIADO/activate/
+Authorization: Bearer SEU_TOKEN_ADMIN
+Content-Type: application/json
+
+### 13.6 Tentar login novamente (agora deve funcionar)
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "motorista.inativo@teste.com",
+    "password": "senha123456"
+}
+
+# Esperado: Login bem-sucedido
+
+
+# ==============================================================================
+# 🎯 14. FLUXO COMPLETO: LOGÍSTICA GERENCIANDO MOTORISTAS
+# ==============================================================================
+
+### 14.1 Fazer login como logística
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "logistica1@teste.com",
+    "password": "senha123456"
+}
+
+### 14.2 Listar usuários (não deve ver admins)
+GET {{authURL}}/users/
+Authorization: Bearer SEU_TOKEN_LOGISTICA
+Content-Type: application/json
+
+### 14.3 Desativar um motorista
+PATCH {{authURL}}/users/ID_DO_MOTORISTA/deactivate/
+Authorization: Bearer SEU_TOKEN_LOGISTICA
+Content-Type: application/json
+
+### 14.4 Tentar desativar admin (deve dar erro)
+PATCH {{authURL}}/users/ID_DO_ADMIN/deactivate/
+Authorization: Bearer SEU_TOKEN_LOGISTICA
+Content-Type: application/json
+
+# Esperado: Status 403 Forbidden
+
+
+# ==============================================================================
+# 📊 15. CENÁRIOS DE ERRO PARA TESTAR VALIDAÇÕES
+# ==============================================================================
+
+### 15.1 Tentar ativar usuário inexistente
+PATCH {{authURL}}/users/99999/activate/
+Authorization: Bearer SEU_TOKEN_ADMIN
+Content-Type: application/json
+
+# Esperado: Status 404 Not Found
+
+### 15.2 Tentar desativar própria conta
+PATCH {{authURL}}/users/SEU_PROPRIO_ID/deactivate/
+Authorization: Bearer SEU_TOKEN_ADMIN
+Content-Type: application/json
+
+# Esperado: Status 400 Bad Request
+
+### 15.3 Ação inválida
+PATCH {{authURL}}/users/1/invalidate/
+Authorization: Bearer SEU_TOKEN_ADMIN
+Content-Type: application/json
+
+# Esperado: Status 404 Not Found (URL não existe)
+
+### 15.4 Sem token de autorização
+GET {{authURL}}/users/
+Content-Type: application/json
+
+# Esperado: Status 401 Unauthorized
+
+
+# ==============================================================================
+# 📊 10. TESTES DE DIFERENTES TIPOS DE USUÁRIO
+# ==============================================================================
+
+### 10.1 Registrar usuário admin
+POST {{authURL}}/register/
+Content-Type: application/json
+
+{
+    "email": "admin@teste.com",
+    "password": "admin123456",
+    "password_confirm": "admin123456",
+    "first_name": "Admin",
+    "last_name": "Sistema",
+    "cpf": "99999999999",
+    "phone": "11777777777",
+    "role": "admin"
+}
+
+### 10.2 Login como admin
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "admin@teste.com",
+    "password": "admin123456"
+}
+
+
+# ==============================================================================
+# 📝 NOTAS IMPORTANTES PARA DEBUGGING
+# ==============================================================================
+
+# 🎯 DICAS PARA USAR ESTES TESTES:
+#
+# 1. Execute na ordem sugerida para melhor experiência
+# 2. Sempre substitua "SEU_TOKEN_AQUI" pelos tokens reais
+# 3. Use o VS Code com extensão "REST Client"
+# 4. Coloque breakpoints nas views e serializers conforme indicado
+# 5. Acompanhe os logs no terminal onde o Django está rodando
+#
+# 🐛 DEBUGGING AVANÇADO:
+#
+# 1. Para ver requisições HTTP detalhadas, adicione no settings.py:
+#    LOGGING['loggers']['django.request'] = {
+#        'handlers': ['console'],
+#        'level': 'DEBUG',
+#        'propagate': False,
+#    }
+#
+# 2. Para debug do DRF, use:
+#    'rest_framework': {
+#        'handlers': ['console'],
+#        'level': 'DEBUG',
+#        'propagate': False,
+#    }
+#
+# 3. No terminal, você verá logs como:
+#    🔍 REGISTER VIEW: Iniciando registro
+#    🔍 VALIDATE_EMAIL chamado com: motorista1@teste.com
+#    ✅ Email motorista1@teste.com está disponível
+#    etc.
+#
+# 🔧 SOLUÇÃO DE PROBLEMAS:
+#
+# - Erro 500: Verifique logs no terminal
+# - Erro 400: Veja detalhes na resposta JSON
+# - Erro 401: Verifique se token está correto e não expirou
+# - Erro 404: Verifique se URL está correta
+#
+# ==============================================================================

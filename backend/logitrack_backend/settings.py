@@ -56,6 +56,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
 ]
 
@@ -237,10 +238,18 @@ SIMPLE_JWT = {
 
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+
+    'JTI_CLAIM': 'jti',
 
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
     'SLIDING_TOKEN_LIFETIME': timedelta(hours=1),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=7),
+    
+    # ← CONFIGURAÇÕES PARA BLACKLIST
+    'TOKEN_BLACKLIST_USE_UTC': True,
+    'TOKEN_BLACKLIST_MODEL': 'token_blacklist.BlacklistedToken',
+    'TOKEN_BLACKLIST_REDIS_URL': None,  # Para usar Redis (opcional)
 }
 
 # ==============================================================================
@@ -318,7 +327,12 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
-        'logitrack_backend': {
+        'accounts': {  # ← NOVO: Logger específico para nossa app
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'rest_framework': {  # ← NOVO: Logger para DRF
             'handlers': ['file', 'console'],
             'level': 'DEBUG',
             'propagate': False,
@@ -351,3 +365,115 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+# Email backend para desenvolvimento vs produção
+if DEBUG:
+    # DESENVOLVIMENTO: Mostrar emails no console
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    print("📧 EMAIL: Usando console backend (desenvolvimento)")
+else:
+    # PRODUÇÃO: Usar SMTP real
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Configurações SMTP (para produção e teste)
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+
+# Email padrão do sistema
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@logitrack.com')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# Configurações específicas do LogiTrack
+LOGITRACK_EMAIL_SETTINGS = {
+    'FROM_NAME': 'LogiTrack Sistema',
+    'FROM_EMAIL': DEFAULT_FROM_EMAIL,
+    'SUPPORT_EMAIL': config('SUPPORT_EMAIL', default='suporte@logitrack.com'),
+    'RESET_URL_TEMPLATE': config('RESET_URL_TEMPLATE', default='http://localhost:3000/reset-password/{token}'),
+    'COMPANY_NAME': 'LogiTrack',
+    'COMPANY_WEBSITE': 'https://logitrack.com',
+    'PASSWORD_RESET_TIMEOUT_HOURS': 24,
+}
+
+# Timeout para email (30 segundos)
+EMAIL_TIMEOUT = 30
+
+# ==============================================================================
+# CONFIGURAÇÕES DE SEGURANÇA PARA EMAIL
+# ==============================================================================
+
+# Limites de envio de email
+EMAIL_RATE_LIMIT = {
+    'MAX_EMAILS_PER_HOUR': 50,
+    'MAX_RESET_REQUESTS_PER_IP_PER_HOUR': 5,
+    'MAX_RESET_REQUESTS_PER_USER_PER_DAY': 3,
+}
+
+# ==============================================================================
+# INSTRUÇÕES DE CONFIGURAÇÃO
+# ==============================================================================
+
+"""
+🔧 CONFIGURAÇÃO DO EMAIL:
+
+1. **Para DESENVOLVIMENTO (usar console):**
+   - Nada a fazer! Emails aparecerão no terminal do Django
+
+2. **Para PRODUÇÃO (Gmail):**
+   Adicione no arquivo .env:
+   
+   EMAIL_HOST=smtp.gmail.com
+   EMAIL_PORT=587
+   EMAIL_USE_TLS=True
+   EMAIL_HOST_USER=seu_email@gmail.com
+   EMAIL_HOST_PASSWORD=sua_senha_de_app
+   DEFAULT_FROM_EMAIL=noreply@seudominio.com
+   
+   ⚠️ IMPORTANTE: Use "Senhas de App" do Gmail, não sua senha normal!
+   
+   Como gerar senha de app do Gmail:
+   1. Vá para https://myaccount.google.com/
+   2. Segurança → Verificação em duas etapas (ative se não tiver)
+   3. Senhas de app → Selecionar app: Mail
+   4. Copie a senha gerada para EMAIL_HOST_PASSWORD
+
+3. **Para PRODUÇÃO (Outlook/Hotmail):**
+   EMAIL_HOST=smtp-mail.outlook.com
+   EMAIL_PORT=587
+   EMAIL_USE_TLS=True
+   EMAIL_HOST_USER=seu_email@outlook.com
+   EMAIL_HOST_PASSWORD=sua_senha
+
+4. **Para PRODUÇÃO (SendGrid):**
+   EMAIL_HOST=smtp.sendgrid.net
+   EMAIL_PORT=587
+   EMAIL_HOST_USER=apikey
+   EMAIL_HOST_PASSWORD=SG.sua_api_key_aqui
+
+5. **Para PRODUÇÃO (Mailgun):**
+   EMAIL_HOST=smtp.mailgun.org
+   EMAIL_PORT=587
+   EMAIL_HOST_USER=postmaster@seu_dominio.mailgun.org
+   EMAIL_HOST_PASSWORD=sua_senha_mailgun
+
+6. **Para TESTE REAL em desenvolvimento:**
+   Crie arquivo .env.local com configurações de email reais
+   e mude DEBUG=False temporariamente
+"""
+
+# ==============================================================================
+# CONFIGURAÇÕES ADICIONAIS RECOMENDADAS
+# ==============================================================================
+
+# Configurações de logging para email
+LOGGING['loggers']['django.core.mail'] = {
+    'handlers': ['file', 'console'],
+    'level': 'INFO',
+    'propagate': False,
+}
+
+# Template de URL para reset (será usado no email)
+PASSWORD_RESET_URL_TEMPLATE = LOGITRACK_EMAIL_SETTINGS['RESET_URL_TEMPLATE']

@@ -18,12 +18,14 @@ logitrack/
 ### Etapa 1.1: Configuração do Ambiente e Estrutura do Projeto
 
 **Backend:**
+
 1. Criar projeto Django com Django REST Framework
 2. Configurar banco de dados SQLite (inicialmente)
 3. Implementar modelo de usuário personalizado (CustomUser)
 4. Configurar sistema de autenticação JWT
 
 **Mobile:**
+
 1. Configurar projeto React Native, Expo e TypeScript
 2. Implementar navegação básica (React Navigation)
 3. Criar estrutura de pastas
@@ -31,6 +33,7 @@ logitrack/
 5. Usar tailwind
 
 **Frontend (Web):**
+
 1. Configurar projeto React
 2. Implementar estrutura de pastas
 3. Configurar cliente HTTP (Axios)
@@ -40,6 +43,7 @@ logitrack/
 ### Etapa 1.2: Sistema de Autenticação
 
 **Backend:**
+
 1. Implementar endpoints de autenticação:
    - Login (`POST /api/auth/login/`)
    - Logout (`POST /api/auth/logout/`)
@@ -49,14 +53,16 @@ logitrack/
 2. Implementar middleware de autenticação
 
 **Mobile:**
+
 1. Criar telas de autenticação:
    - Login
-   - Cadastro (apenas para testes)
+   - Cadastro
    - Esqueci minha senha
 2. Implementar armazenamento de token (AsyncStorage)
 3. Criar contexto de autenticação para gerenciar estado do usuário
 
 **Frontend (Web):**
+
 1. Criar páginas de autenticação:
    - Login
    - Cadastro de novos usuários (para admin)
@@ -67,6 +73,7 @@ logitrack/
 ### Etapa 1.3: Gerenciamento de Usuários (Painel Admin)
 
 **Backend:**
+
 1. Implementar endpoints para gerenciamento de usuários:
    - Listar usuários (`GET /api/usuarios/`)
    - Detalhes do usuário (`GET /api/usuarios/{id}/`)
@@ -75,6 +82,7 @@ logitrack/
    - Ativar/desativar usuário (`PATCH /api/usuarios/{id}/ativar/` e `/desativar/`)
 
 **Frontend (Web):**
+
 1. Criar interface de gerenciamento de usuários
 2. Implementar formulário de criação/edição de usuários
 3. Implementar listagem de usuários com filtros e paginação
@@ -84,6 +92,7 @@ logitrack/
 ### Etapa 2.1: Modelo de Dados Básico
 
 **Backend:**
+
 1. Implementar modelos principais:
    - OrdemTransporte
    - NotaFiscal
@@ -94,6 +103,7 @@ logitrack/
 ### Etapa 2.2: Criação e Gerenciamento de OTs
 
 **Backend:**
+
 1. Implementar endpoints de Ordens de Transporte:
    - Criar OT (`POST /api/ots/`)
    - Listar OTs (`GET /api/ots/`)
@@ -101,11 +111,13 @@ logitrack/
    - Modificar OT (`PATCH /api/ots/{id}/`)
 
 **Mobile:**
+
 1. Criar tela de dashboard principal com lista de OTs do motorista
 2. Implementar tela de criação de OT
 3. Implementar tela de detalhes da OT
 
 **Frontend (Web):**
+
 1. Criar dashboard para visualização de todas as OTs
 2. Implementar filtros e busca de OTs
 3. Criar tela de detalhes da OT com histórico
@@ -113,17 +125,20 @@ logitrack/
 ### Etapa 2.3: Vinculação de Notas Fiscais
 
 **Backend:**
+
 1. Implementar endpoints para notas fiscais:
    - Vincular NF à OT (`POST /api/ots/{ot_id}/notas-fiscais/`)
    - Detalhes da NF (`GET /api/notas-fiscais/{id}/`)
    - Atualizar NF (`PATCH /api/notas-fiscais/{id}/`)
 
 **Mobile:**
+
 1. Criar interface para escanear código de barras/QR das NFs
 2. Implementar tela para preenchimento manual dos dados da NF
 3. Desenvolver funcionalidade para vincular NFs a uma OT existente
 
 **Frontend (Web):**
+
 1. Criar interface para visualização das NFs vinculadas a uma OT
 2. Implementar funcionalidade para adicionar NFs manualmente
 
@@ -132,17 +147,20 @@ logitrack/
 ### Etapa 3.1: Gerenciamento de Status da OT
 
 **Backend:**
+
 1. Implementar endpoints para alteração de status:
    - Iniciar carregamento (`POST /api/ots/{id}/iniciar-carregamento/`)
    - Iniciar trânsito (`POST /api/ots/{id}/iniciar-transito/`)
    - Finalizar OT (`POST /api/ots/{id}/finalizar/`)
 
 **Mobile:**
+
 1. Criar interfaces para transição de status no fluxo de trabalho
 2. Implementar validações para mudanças de status
 3. Desenvolver indicadores visuais de status da OT
 
 **Frontend (Web):**
+
 1. Criar visualização do ciclo de vida da OT
 2. Implementar controles para alteração manual de status (equipe de logística)
 3. Desenvolver timeline visual de eventos da OT
@@ -150,17 +168,20 @@ logitrack/
 ### Etapa 3.2: Upload de Arquivos e Documentação
 
 **Backend:**
+
 1. Configurar armazenamento de arquivos (sistema local inicialmente)
 2. Implementar endpoints para arquivos:
    - Upload de arquivo (`POST /api/ots/{id}/arquivos/`)
    - Listar arquivos (`GET /api/ots/{id}/arquivos/`)
 
 **Mobile:**
+
 1. Implementar captura de fotos usando a câmera
 2. Criar funcionalidade para upload de documentos (canhotos, comprovantes)
 3. Desenvolver visualização de arquivos anexados
 
 **Frontend (Web):**
+
 1. Criar interface para visualização de todos os arquivos vinculados
 2. Implementar upload de documentos pela web
 3. Desenvolver preview de imagens e PDFs
@@ -168,6 +189,7 @@ logitrack/
 ### Etapa 3.3: Transferência de OTs entre Motoristas
 
 **Backend:**
+
 1. Implementar endpoints de transferência:
    - Transferir diretamente (`POST /api/ots/{id}/transferir/`)
    - Solicitar transferência (`POST /api/ots/{id}/solicitar-transferencia/`)
@@ -175,11 +197,13 @@ logitrack/
 2. Implementar modelo TransferenciaOT para histórico
 
 **Mobile:**
+
 1. Criar interface para solicitação de transferência
 2. Implementar busca de OT por número de nota fiscal
 3. Desenvolver notificações de solicitação/aprovação
 
 **Frontend (Web):**
+
 1. Criar interface para gerenciamento de transferências
 2. Implementar aprovação/rejeição de transferências solicitadas
 3. Desenvolver histórico de transferências
@@ -189,15 +213,18 @@ logitrack/
 ### Etapa 4.1: Geolocalização e Rastreamento
 
 **Backend:**
+
 1. Implementar endpoints para registro de localização
 2. Incorporar campos de latitude/longitude nos momentos críticos
 
 **Mobile:**
+
 1. Implementar serviço de localização em background
 2. Criar funcionalidade para registrar localização em eventos importantes
 3. Desenvolver visualização de mapa com rotas percorridas
 
 **Frontend (Web):**
+
 1. Criar dashboard de rastreamento em tempo real
 2. Implementar visualização de mapas para todas as OTs ativas
 3. Desenvolver histórico de localizações
@@ -205,6 +232,7 @@ logitrack/
 ### Etapa 4.2: Sistema de Ocorrências
 
 **Backend:**
+
 1. Implementar modelo de Ocorrencia
 2. Criar endpoints para ocorrências:
    - Registrar ocorrência (`POST /api/ocorrencias/`)
@@ -212,11 +240,13 @@ logitrack/
    - Resolver ocorrência (`POST /api/ocorrencias/{id}/resolver/`)
 
 **Mobile:**
+
 1. Criar interface para registro de ocorrências
 2. Implementar anexos de fotos para ocorrências
 3. Desenvolver acompanhamento de ocorrências abertas
 
 **Frontend (Web):**
+
 1. Criar dashboard de ocorrências
 2. Implementar sistema de tratativas para equipe de logística
 3. Desenvolver relatórios de ocorrências mais frequentes
@@ -224,6 +254,7 @@ logitrack/
 ### Etapa 4.3: Funcionamento Offline
 
 **Mobile:**
+
 1. Implementar banco de dados local (SQLite via React Native SQLite Storage)
 2. Criar sistema de filas para sincronização
 3. Desenvolver indicadores de status de sincronização
@@ -231,10 +262,12 @@ logitrack/
 ### Etapa 4.4: Relatórios e Análises
 
 **Backend:**
+
 1. Implementar endpoints para dados estatísticos
 2. Criar cálculos de métricas importantes (tempo médio, ocorrências, etc.)
 
 **Frontend (Web):**
+
 1. Criar dashboard com gráficos e indicadores
 2. Implementar filtros para relatórios
 3. Desenvolver exportação para Excel/PDF
@@ -244,6 +277,7 @@ logitrack/
 ### Etapa 5.1: Melhorias de UX/UI
 
 **Mobile e Frontend:**
+
 1. Refinar interfaces com base no feedback dos usuários
 2. Otimizar fluxos de trabalho
 3. Implementar temas claro/escuro
@@ -251,6 +285,7 @@ logitrack/
 ### Etapa 5.2: Migração para PostgreSQL (Opcional)
 
 **Backend:**
+
 1. Configurar ambiente de produção com PostgreSQL
 2. Migrar dados de SQLite para PostgreSQL
 3. Ajustar configurações e otimizar consultas
@@ -258,6 +293,7 @@ logitrack/
 ### Etapa 5.3: Integração com Sistemas Externos
 
 **Backend:**
+
 1. Criar APIs para integração com sistemas ERP
 2. Implementar webhooks para notificações
 3. Desenvolver sistema de importação/exportação em massa

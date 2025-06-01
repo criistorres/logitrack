@@ -10,6 +10,10 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.db import models
 from django.utils import timezone
 from django.core.validators import RegexValidator
+import secrets
+import hashlib
+from datetime import timedelta
+from django.conf import settings
 
 
 class CustomUserManager(BaseUserManager):
@@ -447,3 +451,204 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         
         # Salvar o modelo
         super().save(*args, **kwargs)
+
+class PasswordResetToken(models.Model):
+    """
+    Modelo para tokens de redefinição de senha.
+    
+    🔒 SEGURANÇA:
+    - Tokens únicos e seguros
+    - Expiração automática (24 horas)
+    - Hash do token para segurança extra
+    - Um token por usuário (substitui anterior)
+    
+    🐛 DEBUGGING:
+    - Logs detalhados de criação e uso
+    - Rastreamento de tentativas
+    """
+    
+    user = models.OneToOneField(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='password_reset_token',
+        verbose_name='Usuário'
+    )
+    
+    token_hash = models.CharField(
+        'Hash do Token',
+        max_length=64,
+        unique=True,
+        help_text='Hash SHA-256 do token para segurança'
+    )
+    
+    created_at = models.DateTimeField(
+        'Criado em',
+        default=timezone.now
+    )
+    
+    expires_at = models.DateTimeField(
+        'Expira em',
+        help_text='Token expira em 24 horas'
+    )
+    
+    used_at = models.DateTimeField(
+        'Usado em',
+        null=True,
+        blank=True,
+        help_text='Quando o token foi usado para redefinir senha'
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        'IP de Criação',
+        null=True,
+        blank=True,
+        help_text='IP que solicitou o reset'
+    )
+    
+    attempts = models.PositiveIntegerField(
+        'Tentativas',
+        default=0,
+        help_text='Número de tentativas de uso do token'
+    )
+    
+    class Meta:
+        verbose_name = 'Token de Reset de Senha'
+        verbose_name_plural = 'Tokens de Reset de Senha'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Reset Token para {self.user.email} - {self.created_at.strftime('%d/%m/%Y %H:%M')}"
+    
+    @classmethod
+    def generate_token_for_user(cls, user, ip_address=None):
+        """
+        Gera um novo token de reset para o usuário.
+        
+        🔒 SEGURANÇA:
+        - Remove tokens anteriores do mesmo usuário
+        - Gera token criptograficamente seguro
+        - Define expiração de 24 horas
+        
+        Args:
+            user (CustomUser): Usuário que solicitou reset
+            ip_address (str): IP que fez a solicitação
+            
+        Returns:
+            tuple: (PasswordResetToken, raw_token)
+        """
+        print(f"🔑 RESET TOKEN: Gerando token para {user.email}")
+        
+        # Remover tokens anteriores do usuário
+        cls.objects.filter(user=user).delete()
+        print(f"🔑 Tokens anteriores removidos para {user.email}")
+        
+        # Gerar token seguro (32 bytes = 64 caracteres hex)
+        raw_token = secrets.token_urlsafe(32)
+        print(f"🔑 Token gerado: {raw_token[:10]}...{raw_token[-10:]}")
+        
+        # Criar hash do token
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        print(f"🔑 Hash criado: {token_hash[:10]}...{token_hash[-10:]}")
+        
+        # Criar registro no banco
+        reset_token = cls.objects.create(
+            user=user,
+            token_hash=token_hash,
+            expires_at=timezone.now() + timedelta(hours=24),
+            ip_address=ip_address
+        )
+        
+        print(f"🔑 Token salvo no banco - ID: {reset_token.id}")
+        print(f"🔑 Expira em: {reset_token.expires_at}")
+        
+        return reset_token, raw_token
+    
+    @classmethod
+    def validate_token(cls, raw_token):
+        """
+        Valida um token de reset.
+        
+        🔒 SEGURANÇA:
+        - Verifica hash do token
+        - Verifica expiração
+        - Registra tentativas
+        
+        Args:
+            raw_token (str): Token enviado pelo usuário
+            
+        Returns:
+            PasswordResetToken or None: Token válido ou None
+        """
+        print(f"🔑 VALIDATE TOKEN: Validando token {raw_token[:10]}...")
+        
+        # Criar hash do token fornecido
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        print(f"🔑 Hash do token: {token_hash[:10]}...")
+        
+        try:
+            # Buscar token no banco
+            reset_token = cls.objects.get(token_hash=token_hash)
+            print(f"🔑 Token encontrado para: {reset_token.user.email}")
+            
+            # Incrementar tentativas
+            reset_token.attempts += 1
+            reset_token.save(update_fields=['attempts'])
+            
+            # Verificar se já foi usado
+            if reset_token.used_at:
+                print(f"❌ Token já foi usado em: {reset_token.used_at}")
+                return None
+            
+            # Verificar expiração
+            if timezone.now() > reset_token.expires_at:
+                print(f"❌ Token expirado em: {reset_token.expires_at}")
+                return None
+            
+            # Verificar muitas tentativas (máximo 5)
+            if reset_token.attempts > 5:
+                print(f"❌ Muitas tentativas: {reset_token.attempts}")
+                return None
+            
+            print(f"✅ Token válido!")
+            return reset_token
+            
+        except cls.DoesNotExist:
+            print(f"❌ Token não encontrado no banco")
+            return None
+    
+    def mark_as_used(self):
+        """
+        Marca o token como usado.
+        """
+        print(f"🔑 Marcando token como usado para: {self.user.email}")
+        self.used_at = timezone.now()
+        self.save(update_fields=['used_at'])
+    
+    def is_expired(self):
+        """
+        Verifica se o token expirou.
+        """
+        return timezone.now() > self.expires_at
+    
+    def is_used(self):
+        """
+        Verifica se o token já foi usado.
+        """
+        return self.used_at is not None
+    
+    def time_until_expiry(self):
+        """
+        Retorna tempo até expiração.
+        """
+        if self.is_expired():
+            return timedelta(0)
+        return self.expires_at - timezone.now()
+
+
+# ==============================================================================
+# ADICIONE ESTAS CONFIGURAÇÕES AO FINAL DO ARQUIVO accounts/models.py
+# ==============================================================================
+
+# Configurações de email para reset de senha
+PASSWORD_RESET_TIMEOUT = 24 * 60 * 60  # 24 horas em segundos
+PASSWORD_RESET_MAX_ATTEMPTS = 5  # Máximo de tentativas por token

@@ -172,3 +172,8 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+.vscode/launch.json
+backend/.vscode/settings.json
+backend/.vscode/launch.json
+backend/test_email.py
+.vscode/settings.json
