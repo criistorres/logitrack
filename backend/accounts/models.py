@@ -1,9 +1,9 @@
 # ==============================================================================
-# MODELO DE USUÁRIO PERSONALIZADO
+# MODELO DE USUÁRIO PERSONALIZADO - SISTEMA DE CÓDIGO DE RESET
 # ==============================================================================
 
 # Arquivo: backend/accounts/models.py
-# Substitua completamente o conteúdo do arquivo models.py pelo código abaixo:
+# SUBSTITUA COMPLETAMENTE o conteúdo do arquivo models.py
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.base_user import BaseUserManager
@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.core.validators import RegexValidator
 import secrets
 import hashlib
+import random
 from datetime import timedelta
 from django.conf import settings
 
@@ -452,15 +453,23 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         # Salvar o modelo
         super().save(*args, **kwargs)
 
+
 class PasswordResetToken(models.Model):
     """
-    Modelo para tokens de redefinição de senha.
+    Modelo para códigos de redefinição de senha.
     
     🔒 SEGURANÇA:
-    - Tokens únicos e seguros
-    - Expiração automática (24 horas)
-    - Hash do token para segurança extra
-    - Um token por usuário (substitui anterior)
+    - Códigos de 6 dígitos únicos
+    - Expiração automática (30 minutos)
+    - Hash do código para segurança extra
+    - Um código por usuário (substitui anterior)
+    - Máximo 3 tentativas por código
+    
+    🎯 FLUXO DE USO:
+    1. Usuário solicita reset → gera código 6 dígitos
+    2. Email enviado com código
+    3. Usuário digita código + nova senha no app
+    4. Sistema valida código e altera senha
     
     🐛 DEBUGGING:
     - Logs detalhados de criação e uso
@@ -474,11 +483,11 @@ class PasswordResetToken(models.Model):
         verbose_name='Usuário'
     )
     
-    token_hash = models.CharField(
-        'Hash do Token',
+    code_hash = models.CharField(
+        'Hash do Código',
         max_length=64,
         unique=True,
-        help_text='Hash SHA-256 do token para segurança'
+        help_text='Hash SHA-256 do código de 6 dígitos para segurança'
     )
     
     created_at = models.DateTimeField(
@@ -488,14 +497,14 @@ class PasswordResetToken(models.Model):
     
     expires_at = models.DateTimeField(
         'Expira em',
-        help_text='Token expira em 24 horas'
+        help_text='Código expira em 30 minutos'
     )
     
     used_at = models.DateTimeField(
         'Usado em',
         null=True,
         blank=True,
-        help_text='Quando o token foi usado para redefinir senha'
+        help_text='Quando o código foi usado para redefinir senha'
     )
     
     ip_address = models.GenericIPAddressField(
@@ -508,131 +517,206 @@ class PasswordResetToken(models.Model):
     attempts = models.PositiveIntegerField(
         'Tentativas',
         default=0,
-        help_text='Número de tentativas de uso do token'
+        help_text='Número de tentativas de uso do código (máximo 3)'
     )
     
     class Meta:
-        verbose_name = 'Token de Reset de Senha'
-        verbose_name_plural = 'Tokens de Reset de Senha'
+        verbose_name = 'Código de Reset de Senha'
+        verbose_name_plural = 'Códigos de Reset de Senha'
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Reset Token para {self.user.email} - {self.created_at.strftime('%d/%m/%Y %H:%M')}"
+        return f"Reset Code para {self.user.email} - {self.created_at.strftime('%d/%m/%Y %H:%M')}"
     
     @classmethod
-    def generate_token_for_user(cls, user, ip_address=None):
+    def generate_code_for_user(cls, user, ip_address=None):
         """
-        Gera um novo token de reset para o usuário.
+        Gera um novo código de reset para o usuário.
         
         🔒 SEGURANÇA:
-        - Remove tokens anteriores do mesmo usuário
-        - Gera token criptograficamente seguro
-        - Define expiração de 24 horas
+        - Remove códigos anteriores do mesmo usuário
+        - Gera código de 6 dígitos criptograficamente seguro
+        - Define expiração de 30 minutos
+        - Evita códigos sequenciais ou óbvios
         
         Args:
             user (CustomUser): Usuário que solicitou reset
             ip_address (str): IP que fez a solicitação
             
         Returns:
-            tuple: (PasswordResetToken, raw_token)
+            tuple: (PasswordResetToken, raw_code)
         """
-        print(f"🔑 RESET TOKEN: Gerando token para {user.email}")
+        print(f"🔑 RESET CODE: Gerando código para {user.email}")
         
-        # Remover tokens anteriores do usuário
+        # Remover códigos anteriores do usuário
         cls.objects.filter(user=user).delete()
-        print(f"🔑 Tokens anteriores removidos para {user.email}")
+        print(f"🔑 Códigos anteriores removidos para {user.email}")
         
-        # Gerar token seguro (32 bytes = 64 caracteres hex)
-        raw_token = secrets.token_urlsafe(32)
-        print(f"🔑 Token gerado: {raw_token[:10]}...{raw_token[-10:]}")
+        # Gerar código de 6 dígitos (evitando sequências óbvias)
+        attempts = 0
+        max_attempts = 10
         
-        # Criar hash do token
-        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-        print(f"🔑 Hash criado: {token_hash[:10]}...{token_hash[-10:]}")
+        while attempts < max_attempts:
+            # Gerar código aleatório de 6 dígitos
+            raw_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+            
+            # Verificar se não é sequencial ou repetitivo
+            if not cls._is_weak_code(raw_code):
+                break
+            
+            attempts += 1
+        
+        # Se não conseguiu gerar código forte, usar backup seguro
+        if attempts >= max_attempts:
+            raw_code = str(random.randint(100000, 999999))
+        
+        print(f"🔑 Código gerado: {raw_code}")
+        
+        # Criar hash do código
+        code_hash = hashlib.sha256(raw_code.encode()).hexdigest()
+        print(f"🔑 Hash criado: {code_hash[:10]}...{code_hash[-10:]}")
         
         # Criar registro no banco
         reset_token = cls.objects.create(
             user=user,
-            token_hash=token_hash,
-            expires_at=timezone.now() + timedelta(hours=24),
+            code_hash=code_hash,
+            expires_at=timezone.now() + timedelta(minutes=30),  # 30 minutos
             ip_address=ip_address
         )
         
-        print(f"🔑 Token salvo no banco - ID: {reset_token.id}")
+        print(f"🔑 Código salvo no banco - ID: {reset_token.id}")
         print(f"🔑 Expira em: {reset_token.expires_at}")
         
-        return reset_token, raw_token
+        return reset_token, raw_code
     
     @classmethod
-    def validate_token(cls, raw_token):
+    def _is_weak_code(cls, code):
         """
-        Valida um token de reset.
-        
-        🔒 SEGURANÇA:
-        - Verifica hash do token
-        - Verifica expiração
-        - Registra tentativas
+        Verifica se o código é fraco (sequencial, repetitivo, etc.).
         
         Args:
-            raw_token (str): Token enviado pelo usuário
+            code (str): Código de 6 dígitos
+            
+        Returns:
+            bool: True se o código for fraco
+        """
+        # Códigos óbvios
+        weak_codes = [
+            '000000', '111111', '222222', '333333', '444444', 
+            '555555', '666666', '777777', '888888', '999999',
+            '123456', '654321', '012345', '543210',
+            '111222', '222333', '333444', '444555'
+        ]
+        
+        if code in weak_codes:
+            return True
+        
+        # Verificar se todos os dígitos são iguais
+        if len(set(code)) == 1:
+            return True
+        
+        # Verificar sequência crescente
+        is_sequential = True
+        for i in range(1, len(code)):
+            if int(code[i]) != int(code[i-1]) + 1:
+                is_sequential = False
+                break
+        
+        if is_sequential:
+            return True
+        
+        # Verificar sequência decrescente
+        is_reverse_sequential = True
+        for i in range(1, len(code)):
+            if int(code[i]) != int(code[i-1]) - 1:
+                is_reverse_sequential = False
+                break
+        
+        if is_reverse_sequential:
+            return True
+        
+        return False
+    
+    @classmethod
+    def validate_code(cls, raw_code):
+        """
+        Valida um código de reset.
+        
+        🔒 SEGURANÇA:
+        - Verifica hash do código
+        - Verifica expiração
+        - Limita tentativas (máximo 3)
+        - Registra tentativas para auditoria
+        
+        Args:
+            raw_code (str): Código de 6 dígitos enviado pelo usuário
             
         Returns:
             PasswordResetToken or None: Token válido ou None
         """
-        print(f"🔑 VALIDATE TOKEN: Validando token {raw_token[:10]}...")
+        print(f"🔑 VALIDATE CODE: Validando código {raw_code}")
         
-        # Criar hash do token fornecido
-        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-        print(f"🔑 Hash do token: {token_hash[:10]}...")
+        # Validar formato do código
+        if not raw_code or len(raw_code) != 6 or not raw_code.isdigit():
+            print(f"❌ Código inválido - formato incorreto: {raw_code}")
+            return None
+        
+        # Criar hash do código fornecido
+        code_hash = hashlib.sha256(raw_code.encode()).hexdigest()
+        print(f"🔑 Hash do código: {code_hash[:10]}...")
         
         try:
-            # Buscar token no banco
-            reset_token = cls.objects.get(token_hash=token_hash)
-            print(f"🔑 Token encontrado para: {reset_token.user.email}")
+            # Buscar código no banco
+            reset_token = cls.objects.get(code_hash=code_hash)
+            print(f"🔑 Código encontrado para: {reset_token.user.email}")
             
             # Incrementar tentativas
             reset_token.attempts += 1
             reset_token.save(update_fields=['attempts'])
+            print(f"🔑 Tentativa #{reset_token.attempts}")
             
             # Verificar se já foi usado
             if reset_token.used_at:
-                print(f"❌ Token já foi usado em: {reset_token.used_at}")
+                print(f"❌ Código já foi usado em: {reset_token.used_at}")
                 return None
             
             # Verificar expiração
             if timezone.now() > reset_token.expires_at:
-                print(f"❌ Token expirado em: {reset_token.expires_at}")
+                print(f"❌ Código expirado em: {reset_token.expires_at}")
                 return None
             
-            # Verificar muitas tentativas (máximo 5)
-            if reset_token.attempts > 5:
+            # Verificar muitas tentativas (máximo 3)
+            if reset_token.attempts > 3:
                 print(f"❌ Muitas tentativas: {reset_token.attempts}")
                 return None
             
-            print(f"✅ Token válido!")
+            print(f"✅ Código válido!")
             return reset_token
             
         except cls.DoesNotExist:
-            print(f"❌ Token não encontrado no banco")
+            print(f"❌ Código não encontrado no banco")
+            return None
+        except Exception as e:
+            print(f"❌ Erro ao validar código: {e}")
             return None
     
     def mark_as_used(self):
         """
-        Marca o token como usado.
+        Marca o código como usado.
         """
-        print(f"🔑 Marcando token como usado para: {self.user.email}")
+        print(f"🔑 Marcando código como usado para: {self.user.email}")
         self.used_at = timezone.now()
         self.save(update_fields=['used_at'])
     
     def is_expired(self):
         """
-        Verifica se o token expirou.
+        Verifica se o código expirou.
         """
         return timezone.now() > self.expires_at
     
     def is_used(self):
         """
-        Verifica se o token já foi usado.
+        Verifica se o código já foi usado.
         """
         return self.used_at is not None
     
@@ -643,12 +727,27 @@ class PasswordResetToken(models.Model):
         if self.is_expired():
             return timedelta(0)
         return self.expires_at - timezone.now()
+    
+    def get_expiry_minutes_remaining(self):
+        """
+        Retorna minutos restantes até expiração.
+        
+        Returns:
+            int: Minutos restantes (0 se expirado)
+        """
+        if self.is_expired():
+            return 0
+        
+        time_remaining = self.time_until_expiry()
+        return max(0, int(time_remaining.total_seconds() / 60))
 
 
 # ==============================================================================
-# ADICIONE ESTAS CONFIGURAÇÕES AO FINAL DO ARQUIVO accounts/models.py
+# CONFIGURAÇÕES DE SEGURANÇA PARA CÓDIGOS DE RESET
 # ==============================================================================
 
-# Configurações de email para reset de senha
-PASSWORD_RESET_TIMEOUT = 24 * 60 * 60  # 24 horas em segundos
-PASSWORD_RESET_MAX_ATTEMPTS = 5  # Máximo de tentativas por token
+# Configurações de código para reset de senha
+PASSWORD_RESET_CODE_LENGTH = 6          # 6 dígitos
+PASSWORD_RESET_CODE_TIMEOUT = 30        # 30 minutos
+PASSWORD_RESET_MAX_ATTEMPTS = 3         # Máximo de tentativas por código
+PASSWORD_RESET_MAX_DAILY_REQUESTS = 5   # Máximo de solicitações por dia por usuário

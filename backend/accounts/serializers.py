@@ -329,24 +329,30 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 # ==============================================================================
-# 🔄 SERIALIZERS DE RESET DE SENHA
+# 🔄 SERIALIZERS DE RESET DE SENHA - SISTEMA DE CÓDIGO
 # ==============================================================================
 
 class PasswordResetSerializer(serializers.Serializer):
     """
-    📋 PROPÓSITO: Solicitar reset de senha com envio de email DIRETO via SMTP
+    📋 PROPÓSITO: Solicitar reset de senha com envio de CÓDIGO de 6 dígitos via email
+    
+    🔄 MUDANÇAS:
+    - Gera código de 6 dígitos ao invés de token longo
+    - Email mostra apenas o código
+    - Código expira em 30 minutos
+    - Máximo 3 tentativas por código
     
     🔍 DEBUGGING: Para acompanhar processo completo de reset
     1. Coloque breakpoint no método validate_email()
-    2. Observe geração de token seguro
-    3. Acompanhe envio de email DIRETO via SMTP
+    2. Observe geração de código de 6 dígitos
+    3. Acompanhe envio de email com código
     """
     
     email = serializers.EmailField(required=True)
 
     def validate_email(self, value):
         """
-        🔍 Verificar se email existe e criar token de reset
+        🔍 Verificar se email existe e criar código de reset
         
         🐛 DEBUGGING: Coloque breakpoint aqui para ver processo completo
         """
@@ -370,9 +376,9 @@ class PasswordResetSerializer(serializers.Serializer):
     
     def save(self):
         """
-        Gera token e envia email de reset usando SMTP DIRETO.
+        Gera código de 6 dígitos e envia email.
         
-        🐛 DEBUGGING: Processo completo de envio de email DIRETO
+        🐛 DEBUGGING: Processo completo de envio de código por email
         """
         # Verificar se usuário existe (foi validado anteriormente)
         user = self.context.get('reset_user')
@@ -380,7 +386,7 @@ class PasswordResetSerializer(serializers.Serializer):
             print(f"⚠️ Usuário não encontrado no contexto - email pode não existir")
             return False
         
-        print(f"📧 SEND EMAIL DIRETO: Preparando envio para {user.email}")
+        print(f"📧 SEND CODE: Preparando envio de código para {user.email}")
         
         # Obter IP da requisição
         request = self.context.get('request')
@@ -394,58 +400,54 @@ class PasswordResetSerializer(serializers.Serializer):
         
         print(f"📧 IP da solicitação: {ip_address}")
         
-        # Gerar token seguro usando nosso modelo
+        # Gerar código de 6 dígitos usando nosso modelo
         try:
             from .models import PasswordResetToken
-            reset_token, raw_token = PasswordResetToken.generate_token_for_user(user, ip_address)
-            print(f"📧 Token gerado - ID: {reset_token.id}")
+            reset_token, raw_code = PasswordResetToken.generate_code_for_user(user, ip_address)
+            print(f"📧 Código gerado - ID: {reset_token.id}, Código: {raw_code}")
         except Exception as e:
-            print(f"❌ Erro ao gerar token: {e}")
+            print(f"❌ Erro ao gerar código: {e}")
             return False
         
-        # Preparar URL de reset
-        from django.conf import settings
-        reset_url = settings.LOGITRACK_EMAIL_SETTINGS['RESET_URL_TEMPLATE'].format(token=raw_token)
-        print(f"📧 URL de reset: {reset_url[:50]}...")
-        
-        # Enviar email usando SMTP direto
+        # Enviar email com código
         try:
-            print(f"📧 Enviando email via SMTP DIRETO...")
+            print(f"📧 Enviando email com código...")
             
-            # Importar nossa função de email direto
-            from .email_utils import send_password_reset_email_direct
+            # Importar nossa função de email para códigos
+            from .email_utils import send_password_reset_code_email_direct
             
-            email_sent = send_password_reset_email_direct(
+            email_sent = send_password_reset_code_email_direct(
                 user=user,
-                reset_token=raw_token,
-                reset_url=reset_url,
-                request_ip=ip_address
+                reset_code=raw_code,
+                request_ip=ip_address,
+                expires_minutes=30  # 30 minutos
             )
             
             if email_sent:
-                print(f"✅ Email enviado com sucesso via SMTP DIRETO!")
+                print(f"✅ Email com código enviado com sucesso!")
                 return True
             else:
-                print(f"❌ Falha no envio via SMTP DIRETO")
-                # Deletar token se email falhou
+                print(f"❌ Falha no envio do email")
+                # Deletar código se email falhou
                 reset_token.delete()
-                print(f"🗑️ Token deletado devido falha no envio")
+                print(f"🗑️ Código deletado devido falha no envio")
                 return False
                 
         except Exception as e:
-            print(f"❌ Erro no envio de email DIRETO: {e}")
+            print(f"❌ Erro no envio de email: {e}")
             print(f"❌ Tipo do erro: {type(e).__name__}")
             
             # Em desenvolvimento, mostrar detalhes do erro
+            from django.conf import settings
             if settings.DEBUG:
                 import traceback
                 print(f"❌ Traceback completo:")
                 traceback.print_exc()
             
-            # Deletar token se email falhou
+            # Deletar código se email falhou
             try:
                 reset_token.delete()
-                print(f"🗑️ Token deletado devido falha no envio")
+                print(f"🗑️ Código deletado devido falha no envio")
             except:
                 pass
                 
@@ -454,33 +456,56 @@ class PasswordResetSerializer(serializers.Serializer):
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     """
-    📋 PROPÓSITO: Confirmar redefinição de senha com token seguro
+    📋 PROPÓSITO: Confirmar redefinição de senha com código de 6 dígitos
     
-    🔍 DEBUGGING: Para acompanhar validação de token e mudança de senha
+    🔄 MUDANÇAS:
+    - Recebe código de 6 dígitos ao invés de token longo
+    - Valida código de 6 dígitos
+    - Código expira em 30 minutos
+    - Máximo 3 tentativas por código
+    
+    🔍 DEBUGGING: Para acompanhar validação de código e mudança de senha
     """
     
-    token = serializers.CharField(required=True, min_length=32)
-    new_password = serializers.CharField(required=True, min_length=8)
-    confirm_password = serializers.CharField(required=True)
+    code = serializers.CharField(
+        required=True, 
+        min_length=6, 
+        max_length=6,
+        help_text='Código de 6 dígitos enviado por email'
+    )
+    new_password = serializers.CharField(
+        required=True, 
+        min_length=8,
+        help_text='Nova senha (mínimo 8 caracteres)'
+    )
+    confirm_password = serializers.CharField(
+        required=True,
+        help_text='Confirmação da nova senha'
+    )
 
-    def validate_token(self, value):
+    def validate_code(self, value):
         """
-        🔍 Validar token de reset de senha
+        🔍 Validar código de reset de senha
         
-        🐛 DEBUGGING: Coloque breakpoint aqui para ver validação de token
+        🐛 DEBUGGING: Coloque breakpoint aqui para ver validação de código
         """
         from .models import PasswordResetToken
         
-        print(f"🔑 TOKEN VALIDATION: Validando token {value[:10]}...")
+        print(f"🔑 CODE VALIDATION: Validando código {value}")
         
-        # Validar token
-        reset_token = PasswordResetToken.validate_token(value)
+        # Validar formato básico
+        if not value.isdigit() or len(value) != 6:
+            print(f"❌ Código com formato inválido: {value}")
+            raise serializers.ValidationError("Código deve ter exatamente 6 dígitos numéricos.")
+        
+        # Validar código
+        reset_token = PasswordResetToken.validate_code(value)
         
         if not reset_token:
-            print(f"❌ Token inválido, expirado ou já usado")
-            raise serializers.ValidationError("Token inválido, expirado ou já usado.")
+            print(f"❌ Código inválido, expirado ou excedeu tentativas")
+            raise serializers.ValidationError("Código inválido, expirado ou já usado.")
         
-        print(f"✅ Token válido para usuário: {reset_token.user.email}")
+        print(f"✅ Código válido para usuário: {reset_token.user.email}")
         
         # Armazenar no contexto para uso posterior
         self.context['reset_token'] = reset_token
@@ -513,7 +538,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     
     def save(self):
         """
-        Salva a nova senha e marca token como usado.
+        Salva a nova senha e marca código como usado.
         
         🐛 DEBUGGING: Processo de mudança de senha
         """
@@ -531,11 +556,69 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         user.save(update_fields=['password'])
         print(f"✅ Senha alterada com sucesso")
         
-        # Marcar token como usado
+        # Marcar código como usado
         reset_token.mark_as_used()
-        print(f"🔑 Token marcado como usado")
+        print(f"🔑 Código marcado como usado")
         
         return user
+
+
+# ==============================================================================
+# 🛠️ SERIALIZER PARA VERIFICAR CÓDIGO (OPCIONAL)
+# ==============================================================================
+
+class PasswordResetCodeCheckSerializer(serializers.Serializer):
+    """
+    📋 PROPÓSITO: Verificar se um código está válido (sem usar)
+    
+    🎯 USO: Endpoint opcional para o app verificar se código está válido
+    antes de mostrar tela de nova senha
+    """
+    
+    code = serializers.CharField(
+        required=True, 
+        min_length=6, 
+        max_length=6
+    )
+
+    def validate_code(self, value):
+        """
+        Verificar código sem marcá-lo como usado.
+        """
+        from .models import PasswordResetToken
+        
+        print(f"🔍 CODE CHECK: Verificando código {value}")
+        
+        # Validar formato básico
+        if not value.isdigit() or len(value) != 6:
+            raise serializers.ValidationError("Código deve ter exatamente 6 dígitos numéricos.")
+        
+        # Verificar se existe e está válido (sem incrementar tentativas)
+        import hashlib
+        code_hash = hashlib.sha256(value.encode()).hexdigest()
+        
+        try:
+            reset_token = PasswordResetToken.objects.get(code_hash=code_hash)
+            
+            # Verificar condições sem incrementar tentativas
+            if reset_token.used_at:
+                raise serializers.ValidationError("Código já foi usado.")
+            
+            if reset_token.is_expired():
+                raise serializers.ValidationError("Código expirado.")
+            
+            if reset_token.attempts >= 3:
+                raise serializers.ValidationError("Código bloqueado por excesso de tentativas.")
+            
+            # Retornar informações úteis
+            self.context['reset_token'] = reset_token
+            self.context['reset_user'] = reset_token.user
+            self.context['minutes_remaining'] = reset_token.get_expiry_minutes_remaining()
+            
+            return value
+            
+        except PasswordResetToken.DoesNotExist:
+            raise serializers.ValidationError("Código inválido.")
 
 
 # ==============================================================================

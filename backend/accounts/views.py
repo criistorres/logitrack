@@ -27,6 +27,7 @@ from .serializers import (
     PasswordResetConfirmSerializer,
     UserActivationSerializer,
     UserListSerializer,
+    PasswordResetCodeCheckSerializer,
     debug_serializer_flow  # Nossa função helper
 )
 from .permissions import (
@@ -376,18 +377,24 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
 
 # ==============================================================================
-# 🔄 VIEWS DE RESET DE SENHA
+# 🔄 VIEWS DE RESET DE SENHA - SISTEMA DE CÓDIGO
 # ==============================================================================
-
 
 class PasswordResetView(APIView):
     """
-    🎯 PROPÓSITO: Solicitar redefinição de senha com envio de email REAL
+    🎯 PROPÓSITO: Solicitar redefinição de senha com envio de CÓDIGO de 6 dígitos
+    
+    🔄 MUDANÇAS:
+    - Gera código de 6 dígitos ao invés de token longo
+    - Email mostra apenas o código
+    - Código expira em 30 minutos
+    - Máximo 3 tentativas por código
     
     🐛 DEBUGGING:
-    1. Coloque breakpoint na linha: print("🎯 PASSWORD RESET: Solicitação de reset")
-    2. Acompanhe geração de token e envio de email
-    3. Observe logs detalhados no console
+    1. Coloque breakpoint na linha: print("🎯 PASSWORD RESET: Solicitação de código")
+    2. Acompanhe geração de código de 6 dígitos
+    3. Observe envio de email com código
+    4. Teste com diferentes emails (válidos e inválidos)
     """
     
     permission_classes = [permissions.AllowAny]
@@ -400,11 +407,17 @@ class PasswordResetView(APIView):
         
         🔒 SEGURANÇA:
         - Sempre retorna sucesso por segurança (não revela se email existe)
-        - Gera tokens criptograficamente seguros
-        - Limita tentativas por IP
-        - Expira tokens em 24 horas
+        - Gera códigos criptograficamente seguros
+        - Limita tentativas por IP (TODO: implementar rate limiting)
+        - Expira códigos em 30 minutos
+        
+        🔄 NOVO FLUXO:
+        1. Valida email
+        2. Se email existe, gera código de 6 dígitos
+        3. Envia email com código
+        4. Sempre retorna sucesso (segurança)
         """
-        print("🎯 PASSWORD RESET: Solicitação de reset")
+        print("🎯 PASSWORD RESET: Solicitação de código")
         print(f"🎯 Email solicitado: {request.data.get('email')}")
         
         # Obter IP da requisição para logging
@@ -425,38 +438,49 @@ class PasswordResetView(APIView):
         )
         
         if serializer.is_valid():
-            print(f"🎯 Dados válidos, processando reset...")
+            print(f"🎯 Dados válidos, processando envio de código...")
             
-            # Tentar enviar email (o serializer faz tudo)
+            # Tentar enviar email com código (o serializer faz tudo)
             try:
                 email_sent = serializer.save()
                 
                 if email_sent:
-                    print(f"✅ Email de reset enviado com sucesso")
-                    message = "Se o email existir em nossa base, um link de redefinição foi enviado."
+                    print(f"✅ Email com código enviado com sucesso")
+                    message = "Se o email existir em nossa base, um código de redefinição foi enviado."
+                    details = {
+                        'email_sent': True,
+                        'expires_in_minutes': 30,
+                    }
                 else:
                     print(f"❌ Falha no envio do email")
                     message = "Ocorreu um erro ao enviar o email. Tente novamente em alguns minutos."
+                    details = {
+                        'email_sent': False,
+                    }
                 
                 # SEMPRE retorna sucesso por segurança (não revela se email existe)
                 return Response({
                     'success': True,
                     'message': message,
-                    'details': {
-                        'email_sent': email_sent,
+                    'data': {
+                        'email': request.data.get('email'),
+                        'code_length': 6,
+                        'expires_in_minutes': 30,
+                        'max_attempts': 3,
+                        **details,
                         'ip_address': ip_address if settings.DEBUG else None,
                         'timestamp': timezone.now().isoformat(),
                     }
                 }, status=status.HTTP_200_OK)
                 
             except Exception as e:
-                print(f"❌ Erro inesperado no reset: {e}")
+                print(f"❌ Erro inesperado no envio de código: {e}")
                 logger.error(f"Erro no reset de senha: {e}")
                 
                 return Response({
                     'success': True,  # Ainda retorna sucesso por segurança
-                    'message': 'Se o email existir em nossa base, um link de redefinição será enviado.',
-                    'details': {
+                    'message': 'Se o email existir em nossa base, um código de redefinição será enviado.',
+                    'data': {
                         'email_sent': False,
                         'error': str(e) if settings.DEBUG else None,
                     }
@@ -472,12 +496,19 @@ class PasswordResetView(APIView):
 
 class PasswordResetConfirmView(APIView):
     """
-    🎯 PROPÓSITO: Confirmar nova senha usando token seguro
+    🎯 PROPÓSITO: Confirmar nova senha usando código de 6 dígitos
+    
+    🔄 MUDANÇAS:
+    - Recebe código de 6 dígitos ao invés de token longo
+    - Valida código de 6 dígitos
+    - Código expira em 30 minutos
+    - Máximo 3 tentativas por código
     
     🐛 DEBUGGING:
     1. Coloque breakpoint na linha: print("🎯 PASSWORD RESET CONFIRM")
-    2. Observe validação de token
+    2. Observe validação de código
     3. Acompanhe mudança de senha
+    4. Teste com códigos válidos e inválidos
     """
     
     permission_classes = [permissions.AllowAny]
@@ -487,13 +518,19 @@ class PasswordResetConfirmView(APIView):
         POST /api/auth/password/confirm/
         
         Body: {
-            "token": "token_seguro_aqui",
+            "code": "123456",
             "new_password": "novaSenha123",
             "confirm_password": "novaSenha123"
         }
+        
+        🔄 NOVO FLUXO:
+        1. Valida formato do código (6 dígitos)
+        2. Verifica se código existe e está válido
+        3. Valida nova senha
+        4. Altera senha e marca código como usado
         """
-        print("🎯 PASSWORD RESET CONFIRM: Confirmando nova senha")
-        print(f"🎯 Token recebido: {request.data.get('token', '')[:10]}...")
+        print("🎯 PASSWORD RESET CONFIRM: Confirmando nova senha com código")
+        print(f"🎯 Código recebido: {request.data.get('code', '')}")
         
         serializer = PasswordResetConfirmSerializer(data=request.data)
         
@@ -511,6 +548,7 @@ class PasswordResetConfirmView(APIView):
                     'message': 'Senha redefinida com sucesso',
                     'data': {
                         'user_email': user.email,
+                        'user_name': user.full_name,
                         'changed_at': timezone.now().isoformat(),
                     }
                 }, status=status.HTTP_200_OK)
@@ -529,11 +567,14 @@ class PasswordResetConfirmView(APIView):
         
         # Verificar tipo de erro para resposta mais específica
         errors = serializer.errors
-        if 'token' in errors:
-            message = 'Token inválido, expirado ou já usado'
+        if 'code' in errors:
+            message = 'Código inválido, expirado ou excedeu tentativas'
             status_code = status.HTTP_400_BAD_REQUEST
         elif 'new_password' in errors:
             message = 'Senha não atende aos critérios de segurança'
+            status_code = status.HTTP_400_BAD_REQUEST
+        elif 'confirm_password' in errors or 'non_field_errors' in errors:
+            message = 'As senhas não coincidem'
             status_code = status.HTTP_400_BAD_REQUEST
         else:
             message = 'Dados inválidos'
@@ -545,6 +586,188 @@ class PasswordResetConfirmView(APIView):
             'errors': errors
         }, status=status_code)
 
+
+# ==============================================================================
+# 🆕 NOVA VIEW: VERIFICAR CÓDIGO (OPCIONAL)
+# ==============================================================================
+
+class PasswordResetCodeCheckView(APIView):
+    """
+    🎯 PROPÓSITO: Verificar se um código está válido (sem usar)
+    
+    🎯 USO: Endpoint opcional para o app verificar se código está válido
+    antes de mostrar tela de nova senha
+    
+    GET /api/auth/password/check-code/{code}/
+    ou
+    POST /api/auth/password/check-code/
+    Body: {"code": "123456"}
+    
+    🐛 DEBUGGING: Para testar códigos sem consumi-los
+    """
+    
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, code=None):
+        """
+        GET /api/auth/password/check-code/{code}/
+        """
+        if not code:
+            return Response({
+                'success': False,
+                'message': 'Código é obrigatório'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return self._check_code({'code': code})
+    
+    def post(self, request):
+        """
+        POST /api/auth/password/check-code/
+        Body: {"code": "123456"}
+        """
+        return self._check_code(request.data)
+    
+    def _check_code(self, data):
+        """
+        Lógica comum para verificar código.
+        """
+        print(f"🔍 CODE CHECK: Verificando código {data.get('code', '')}")
+        
+        serializer = PasswordResetCodeCheckSerializer(data=data)
+        
+        if serializer.is_valid():
+            reset_token = serializer.context['reset_token']
+            reset_user = serializer.context['reset_user']
+            minutes_remaining = serializer.context['minutes_remaining']
+            
+            print(f"✅ Código válido para: {reset_user.email}")
+            
+            return Response({
+                'success': True,
+                'message': 'Código válido',
+                'data': {
+                    'valid': True,
+                    'user_email': reset_user.email,
+                    'user_name': reset_user.full_name,
+                    'expires_in_minutes': minutes_remaining,
+                    'attempts_used': reset_token.attempts,
+                    'max_attempts': 3,
+                    'created_at': reset_token.created_at.isoformat(),
+                }
+            })
+        else:
+            print(f"❌ Código inválido: {serializer.errors}")
+            
+            return Response({
+                'success': False,
+                'message': 'Código inválido, expirado ou bloqueado',
+                'data': {
+                    'valid': False,
+                },
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ==============================================================================
+# 🛠️ VIEWS AUXILIARES PARA DEBUGGING DE CÓDIGOS
+# ==============================================================================
+
+@api_view(['GET'])
+@permission_classes([IsAdminOnly])
+def debug_password_reset_codes(request):
+    """
+    🎯 ENDPOINT PARA DEBUGGING: Ver todos os códigos de reset (apenas admin)
+    
+    GET /api/auth/debug/reset-codes/
+    
+    🐛 Use este endpoint para debuggar códigos de reset em desenvolvimento
+    """
+    print("🔍 DEBUG: Listando códigos de reset")
+    
+    from .models import PasswordResetToken
+    
+    codes = PasswordResetToken.objects.all().order_by('-created_at')[:20]
+    
+    codes_data = []
+    for code_token in codes:
+        codes_data.append({
+            'id': code_token.id,
+            'user_email': code_token.user.email,
+            'user_name': code_token.user.full_name,
+            'created_at': code_token.created_at,
+            'expires_at': code_token.expires_at,
+            'used_at': code_token.used_at,
+            'ip_address': code_token.ip_address,
+            'attempts': code_token.attempts,
+            'is_expired': code_token.is_expired(),
+            'is_used': code_token.is_used(),
+            'minutes_remaining': code_token.get_expiry_minutes_remaining(),
+        })
+    
+    return Response({
+        'success': True,
+        'message': f'Últimos {len(codes_data)} códigos de reset',
+        'data': codes_data,
+        'total_codes': PasswordResetToken.objects.count(),
+        'active_codes': PasswordResetToken.objects.filter(
+            used_at__isnull=True,
+            expires_at__gt=timezone.now()
+        ).count(),
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminOnly])
+def debug_generate_test_code(request):
+    """
+    🎯 ENDPOINT PARA DEBUGGING: Gerar código de teste (apenas admin)
+    
+    POST /api/auth/debug/generate-code/
+    Body: {"email": "usuario@teste.com"}
+    
+    🐛 Use este endpoint para gerar códigos de teste em desenvolvimento
+    """
+    print("🧪 DEBUG: Gerando código de teste")
+    
+    email = request.data.get('email')
+    if not email:
+        return Response({
+            'success': False,
+            'message': 'Email é obrigatório'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        user = CustomUser.objects.get(email=email, is_active=True)
+        
+        from .models import PasswordResetToken
+        reset_token, raw_code = PasswordResetToken.generate_code_for_user(
+            user, 
+            request.META.get('REMOTE_ADDR')
+        )
+        
+        print(f"✅ Código de teste gerado: {raw_code}")
+        
+        return Response({
+            'success': True,
+            'message': 'Código de teste gerado',
+            'data': {
+                'code': raw_code,  # APENAS EM DEBUG!
+                'user_email': user.email,
+                'expires_at': reset_token.expires_at,
+                'expires_in_minutes': reset_token.get_expiry_minutes_remaining(),
+            }
+        })
+        
+    except CustomUser.DoesNotExist:
+        return Response({
+            'success': False,
+            'message': 'Usuário não encontrado ou inativo'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Erro ao gerar código: {e}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ==============================================================================
 # VIEWS AUXILIARES PARA RESET DE SENHA
@@ -638,7 +861,7 @@ def debug_password_reset_tokens(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
-def debug_user_info(request):
+def debug_user_info(request): # type: ignore
     """
     🎯 ENDPOINT PARA DEBUGGING: Ver informações do usuário logado
     

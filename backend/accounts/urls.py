@@ -1,9 +1,10 @@
 # ==============================================================================
-# URLs DE AUTENTICAÇÃO
+# URLs DE AUTENTICAÇÃO - SISTEMA DE CÓDIGO
 # ==============================================================================
 
 # Arquivo: backend/accounts/urls.py
-# Crie este arquivo novo na pasta accounts/
+# ADICIONE as novas URLs para sistema de código
+# MANTENHA todas as URLs existentes
 
 from django.urls import path
 from rest_framework_simplejwt.views import (
@@ -17,24 +18,23 @@ from .views import (
     UserProfileView,
     PasswordResetView,
     PasswordResetConfirmView,
+    PasswordResetCodeCheckView,  # 🆕 NOVA VIEW
     UserListView,
     UserDetailView,
     UserActivationView,
     debug_user_info,
     debug_permissions_test,
     debug_endpoints,
-    test_password_reset_token,
-    debug_password_reset_tokens,
+    debug_password_reset_codes,  # 🆕 NOVA VIEW
+    debug_generate_test_code,     # 🆕 NOVA VIEW
 )
 
 # ==============================================================================
-# 📋 MAPEAMENTO DE URLs PARA VIEWS
+# 📋 MAPEAMENTO DE URLs ATUALIZADO
 # ==============================================================================
 
 """
-🎯 ESTRUTURA DOS ENDPOINTS:
-
-Todas as URLs começam com /api/auth/ (definido no urls.py principal)
+🎯 ESTRUTURA ATUALIZADA DOS ENDPOINTS:
 
 AUTENTICAÇÃO:
 - POST   /api/auth/register/           → RegisterView
@@ -48,20 +48,22 @@ PERFIL:
 - PATCH  /api/auth/user/               → UserProfileView (editar parcial)
 
 GERENCIAMENTO DE USUÁRIOS:
-- GET    /api/auth/users/              → UserListView (listar usuários - logística/admin)
-- GET    /api/auth/users/{id}/         → UserDetailView (detalhes usuário - owner/logística/admin)
-- PATCH  /api/auth/users/{id}/activate/    → UserActivationView (ativar - logística/admin)
-- PATCH  /api/auth/users/{id}/deactivate/  → UserActivationView (desativar - logística/admin)
+- GET    /api/auth/users/              → UserListView (listar usuários)
+- GET    /api/auth/users/{id}/         → UserDetailView (detalhes usuário)
+- PATCH  /api/auth/users/{id}/activate/    → UserActivationView (ativar)
+- PATCH  /api/auth/users/{id}/deactivate/  → UserActivationView (desativar)
 
-RESET DE SENHA:
-- POST   /api/auth/password/reset/     → PasswordResetView (envio de email)
-- POST   /api/auth/password/confirm/   → PasswordResetConfirmView (confirmar nova senha)
-- GET    /api/auth/password/test-token/{token}/ → test_password_reset_token (testar token)
+🔄 RESET DE SENHA - SISTEMA DE CÓDIGO:
+- POST   /api/auth/password/reset/     → PasswordResetView (envio de código)
+- POST   /api/auth/password/confirm/   → PasswordResetConfirmView (confirmar com código)
+- POST   /api/auth/password/check-code/ → PasswordResetCodeCheckView (verificar código)
+- GET    /api/auth/password/check-code/{code}/ → PasswordResetCodeCheckView (verificar código via GET)
 
-DEBUGGING:
+🛠️ DEBUGGING - SISTEMA DE CÓDIGO:
 - GET    /api/auth/debug/              → debug_user_info
-- GET    /api/auth/debug/permissions/  → debug_permissions_test (logística/admin)
-- GET    /api/auth/debug/reset-tokens/ → debug_password_reset_tokens (admin)
+- GET    /api/auth/debug/permissions/  → debug_permissions_test
+- GET    /api/auth/debug/reset-codes/  → debug_password_reset_codes (🆕 NOVO)
+- POST   /api/auth/debug/generate-code/ → debug_generate_test_code (🆕 NOVO)
 - GET    /api/auth/endpoints/          → debug_endpoints
 """
 
@@ -111,7 +113,7 @@ urlpatterns = [
     ),
     
     # ==============================================================================
-    # 🔄 ENDPOINTS DE RESET DE SENHA
+    # 🔄 ENDPOINTS DE RESET DE SENHA - SISTEMA DE CÓDIGO
     # ==============================================================================
     
     path(
@@ -126,8 +128,22 @@ urlpatterns = [
         name='password_reset_confirm'
     ),
     
+    # 🆕 NOVO: Verificar código sem consumir
+    path(
+        'password/check-code/',
+        PasswordResetCodeCheckView.as_view(),
+        name='password_check_code'
+    ),
+    
+    # 🆕 NOVO: Verificar código via GET
+    path(
+        'password/check-code/<str:code>/',
+        PasswordResetCodeCheckView.as_view(),
+        name='password_check_code_get'
+    ),
+    
     # ==============================================================================
-    # 👥 ENDPOINTS DE GERENCIAMENTO DE USUÁRIOS (LOGÍSTICA/ADMIN)
+    # 👥 ENDPOINTS DE GERENCIAMENTO DE USUÁRIOS
     # ==============================================================================
     
     path(
@@ -157,7 +173,7 @@ urlpatterns = [
     ),
 
     # ==============================================================================
-    # 🛠️ ENDPOINTS DE DEBUGGING (REMOVER EM PRODUÇÃO)
+    # 🛠️ ENDPOINTS DE DEBUGGING
     # ==============================================================================
     
     path(
@@ -172,10 +188,18 @@ urlpatterns = [
         name='debug_permissions'
     ),
     
+    # 🆕 NOVO: Debug de códigos de reset
     path(
-        'debug/reset-tokens/',
-        debug_password_reset_tokens,
-        name='debug_reset_tokens'
+        'debug/reset-codes/',
+        debug_password_reset_codes,
+        name='debug_reset_codes'
+    ),
+    
+    # 🆕 NOVO: Gerar código de teste
+    path(
+        'debug/generate-code/',
+        debug_generate_test_code,
+        name='debug_generate_code'
     ),
     
     path(
@@ -184,3 +208,51 @@ urlpatterns = [
         name='debug_endpoints'
     ),
 ]
+
+# ==============================================================================
+# 📝 DOCUMENTAÇÃO DOS NOVOS ENDPOINTS
+# ==============================================================================
+
+"""
+🎯 NOVOS ENDPOINTS ADICIONADOS:
+
+1. **POST /api/auth/password/check-code/**
+   - Verifica se código está válido (sem consumir)
+   - Body: {"code": "123456"}
+   - Retorna: validity, tempo restante, tentativas usadas
+
+2. **GET /api/auth/password/check-code/{code}/**
+   - Mesma funcionalidade via GET
+   - Ex: GET /api/auth/password/check-code/123456/
+
+3. **GET /api/auth/debug/reset-codes/** (Admin only)
+   - Lista todos os códigos de reset ativos
+   - Útil para debugging
+   - Mostra: usuário, código, expiração, tentativas
+
+4. **POST /api/auth/debug/generate-code/** (Admin only)  
+   - Gera código de teste para usuário específico
+   - Body: {"email": "user@test.com"}
+   - Retorna o código gerado (apenas em debug)
+
+🔧 COMO TESTAR:
+
+1. **Fluxo completo:**
+   POST /api/auth/password/reset/ {"email": "user@test.com"}
+   → Email enviado com código
+   POST /api/auth/password/confirm/ {"code": "123456", "new_password": "nova123", "confirm_password": "nova123"}
+
+2. **Verificar código:**
+   POST /api/auth/password/check-code/ {"code": "123456"}
+   → Retorna se código é válido
+
+3. **Debug (admin):**
+   GET /api/auth/debug/reset-codes/
+   → Lista todos os códigos ativos
+
+🚨 IMPORTANTE:
+- Os endpoints antigos continuam funcionando
+- O sistema é retrocompatível
+- Códigos expiram em 30 minutos
+- Máximo 3 tentativas por código
+"""

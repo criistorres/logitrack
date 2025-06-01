@@ -1,0 +1,515 @@
+# ==============================================================================
+# LOGITRACK - TESTES DO SISTEMA DE CÓDIGO DE RESET DE SENHA
+# ==============================================================================
+# 
+# 📋 INSTRUÇÕES:
+# 1. Instale a extensão "REST Client" no VS Code
+# 2. Execute cada requisição clicando em "Send Request" acima de cada ###
+# 3. Acompanhe as respostas e use para debugging
+# 4. IMPORTANTE: Execute na ordem indicada para melhor experiência
+#
+# 🎯 ORDEM RECOMENDADA PARA TESTES DO SISTEMA DE CÓDIGO:
+# 1. Verificar se API está funcionando
+# 2. Registrar um usuário (se necessário)
+# 3. Solicitar código de reset por email
+# 4. Verificar código (opcional)
+# 5. Confirmar nova senha com código
+# 6. Testar login com nova senha
+# 7. Endpoints de debugging (admin)
+#
+# ==============================================================================
+
+# VARIÁVEIS GLOBAIS (atualize conforme necessário)
+@baseURL = http://localhost:8000
+@authURL = {{baseURL}}/api/auth
+
+# Variáveis para tokens (serão preenchidas automaticamente após login)
+@accessToken = 
+@refreshToken = 
+@adminToken = 
+
+# Variáveis para testes de código
+@testEmail = ctorres@beautyservices.com.br
+@testCode = 
+
+# ==============================================================================
+# 🏠 1. VERIFICAÇÃO INICIAL
+# ==============================================================================
+
+### 1.1 Verificar se API está funcionando
+GET {{baseURL}}
+Content-Type: application/json
+
+# Esperado: Informações básicas da API
+
+### 1.2 Ver todos os endpoints disponíveis
+GET {{authURL}}/endpoints/
+Content-Type: application/json
+
+# Esperado: Lista completa incluindo novos endpoints de código
+
+# ==============================================================================
+# 👤 2. PREPARAR USUÁRIO PARA TESTE (SE NECESSÁRIO)
+# ==============================================================================
+
+### 2.1 Registrar usuário para teste (se não existir)
+POST {{authURL}}/register/
+Content-Type: application/json
+
+{
+    "email": "{{testEmail}}",
+    "password": "senha123456",
+    "password_confirm": "senha123456",
+    "first_name": "Motorista",
+    "last_name": "Teste",
+    "cpf": "12345678901",
+    "phone": "11999999999",
+    "role": "motorista",
+    "cnh_numero": "12345678901",
+    "cnh_categoria": "B",
+    "cnh_validade": "2025-12-31"
+}
+
+# Nota: Se usuário já existir, receberá erro, mas é normal
+
+### 2.2 Fazer login para ativar usuário (se necessário)
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "{{testEmail}}",
+    "password": "Laura1"
+}
+
+# Copie o access_token se login for bem-sucedido
+
+# ==============================================================================
+# 🔄 3. SISTEMA DE CÓDIGO - FLUXO PRINCIPAL
+# ==============================================================================
+
+### 3.1 Solicitar código de reset por email
+POST {{authURL}}/password/reset/
+Content-Type: application/json
+
+{
+    "email": "{{testEmail}}"
+}
+
+# 🎯 NOVO COMPORTAMENTO:
+# - Gera código de 6 dígitos ao invés de token longo
+# - Email é enviado com código destacado
+# - Código expira em 30 minutos
+# - Máximo 3 tentativas por código
+#
+# Esperado:
+# - Status 200 OK (sempre por segurança)
+# - Message: "Se o email existir em nossa base, um código de redefinição foi enviado"
+# - Data: expires_in_minutes: 30, max_attempts: 3
+#
+# 📧 VERIFICAR EMAIL:
+# - Abra o terminal onde Django está rodando
+# - Procure por logs como "📧 Código gerado: 123456"
+# - OU se configurou SMTP real, verifique sua caixa de entrada
+
+### 3.2 Solicitar código para email inexistente (teste de segurança)
+POST {{authURL}}/password/reset/
+Content-Type: application/json
+
+{
+    "email": "naoexiste@teste.com"
+}
+
+# Esperado:
+# - Status 200 OK (sempre por segurança)
+# - Mesma mensagem independente de email existir
+# - Não revela se email existe ou não
+
+# ==============================================================================
+# 🔍 4. VERIFICAR CÓDIGO (ENDPOINT OPCIONAL)
+# ==============================================================================
+
+### 4.1 Verificar código via POST (substitua 123456 pelo código real)
+POST {{authURL}}/password/check-code/
+Content-Type: application/json
+
+{
+    "code": "686186"
+}
+
+# 🎯 NOVO ENDPOINT:
+# - Verifica se código está válido SEM consumi-lo
+# - Útil para validar antes de mostrar formulário de nova senha
+#
+# Esperado se código válido:
+# - Status 200 OK
+# - valid: true, expires_in_minutes: X, attempts_used: Y
+#
+# Esperado se código inválido:
+# - Status 400 Bad Request
+# - valid: false, message explicando o problema
+
+### 4.2 Verificar código via GET
+GET {{authURL}}/password/check-code/123456/
+Content-Type: application/json
+
+# Mesma funcionalidade, mas via GET para facilidade
+
+### 4.3 Verificar código inválido (teste de validação)
+POST {{authURL}}/password/check-code/
+Content-Type: application/json
+
+{
+    "code": "000000"
+}
+
+# Esperado:
+# - Status 400 Bad Request
+# - valid: false
+
+### 4.4 Verificar código com formato inválido
+POST {{authURL}}/password/check-code/
+Content-Type: application/json
+
+{
+    "code": "12345"
+}
+
+# Esperado:
+# - Status 400 Bad Request
+# - Erro: "Código deve ter exatamente 6 dígitos numéricos"
+
+# ==============================================================================
+# 🔐 5. CONFIRMAR NOVA SENHA COM CÓDIGO
+# ==============================================================================
+
+### 5.1 Confirmar nova senha com código válido
+POST {{authURL}}/password/confirm/
+Content-Type: application/json
+
+{
+    "code": "686186",
+    "new_password": "Laura@!2024",
+    "confirm_password": "Laura@!2024"
+}
+
+# 🎯 NOVO COMPORTAMENTO:
+# - Recebe código de 6 dígitos ao invés de token longo
+# - Valida código, expiração e tentativas
+# - Altera senha e marca código como usado
+#
+# Esperado se código válido:
+# - Status 200 OK
+# - message: "Senha redefinida com sucesso"
+# - data: user_email, user_name, changed_at
+#
+# Esperado se código inválido/expirado:
+# - Status 400 Bad Request
+# - message: "Código inválido, expirado ou excedeu tentativas"
+
+### 5.2 Tentar usar o mesmo código novamente (deve dar erro)
+POST {{authURL}}/password/confirm/
+Content-Type: application/json
+
+{
+    "code": "123456",
+    "new_password": "outraSenha123",
+    "confirm_password": "outraSenha123"
+}
+
+# Esperado:
+# - Status 400 Bad Request
+# - Erro: Código já foi usado
+
+### 5.3 Confirmar com senhas que não coincidem
+POST {{authURL}}/password/confirm/
+Content-Type: application/json
+
+{
+    "code": "123456",
+    "new_password": "novaSenha123",
+    "confirm_password": "senhasDiferentes123"
+}
+
+# Esperado:
+# - Status 400 Bad Request
+# - Erro: "As senhas não coincidem"
+
+### 5.4 Confirmar com senha fraca
+POST {{authURL}}/password/confirm/
+Content-Type: application/json
+
+{
+    "code": "123456",
+    "new_password": "123",
+    "confirm_password": "123"
+}
+
+# Esperado:
+# - Status 400 Bad Request
+# - Erro de validação de senha Django
+
+# ==============================================================================
+# ✅ 6. TESTAR LOGIN COM NOVA SENHA
+# ==============================================================================
+
+### 6.1 Testar login com senha antiga (deve dar erro)
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "{{testEmail}}",
+    "password": "senha123456"
+}
+
+# Esperado:
+# - Status 401 Unauthorized
+# - Erro: "Credenciais inválidas"
+
+### 6.2 Testar login com nova senha (deve funcionar)
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "{{testEmail}}",
+    "password": "novaSenha123456"
+}
+
+# Esperado:
+# - Status 200 OK
+# - Tokens JWT válidos
+# - Dados do usuário
+
+# ==============================================================================
+# 🛠️ 7. ENDPOINTS DE DEBUGGING (APENAS ADMIN)
+# ==============================================================================
+
+### 7.1 Fazer login como admin para testes de debug
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "admin@teste.com",
+    "password": "admin123456"
+}
+
+# Copie o access_token e cole na variável @adminToken acima
+
+### 7.2 Listar todos os códigos de reset (admin only)
+GET {{authURL}}/debug/reset-codes/
+Authorization: Bearer SEU_TOKEN_ADMIN_AQUI
+Content-Type: application/json
+
+# 🆕 NOVO ENDPOINT DE DEBUG:
+# - Lista todos os códigos de reset no sistema
+# - Mostra: usuário, data criação, expiração, tentativas, status
+# - Útil para debugging
+#
+# Esperado:
+# - Status 200 OK se for admin
+# - Lista de códigos com detalhes
+# - Status 403 Forbidden se não for admin
+
+### 7.3 Gerar código de teste (admin only)
+POST {{authURL}}/debug/generate-code/
+Authorization: Bearer SEU_TOKEN_ADMIN_AQUI
+Content-Type: application/json
+
+{
+    "email": "{{testEmail}}"
+}
+
+# 🆕 NOVO ENDPOINT DE DEBUG:
+# - Gera código de teste para usuário específico
+# - Retorna o código gerado (apenas em debug)
+# - Útil para testes automatizados
+#
+# Esperado:
+# - Status 200 OK se for admin
+# - code: "123456" (código gerado)
+# - expires_in_minutes: 30
+# - Status 403 Forbidden se não for admin
+
+### 7.4 Tentar usar endpoint de debug como usuário comum (deve dar erro)
+GET {{authURL}}/debug/reset-codes/
+Authorization: Bearer SEU_TOKEN_USUARIO_COMUM
+Content-Type: application/json
+
+# Esperado:
+# - Status 403 Forbidden
+# - Erro de permissão
+
+# ==============================================================================
+# 🧪 8. TESTES DE LIMITE E SEGURANÇA
+# ==============================================================================
+
+### 8.1 Gerar novo código para testar tentativas
+POST {{authURL}}/password/reset/
+Content-Type: application/json
+
+{
+    "email": "{{testEmail}}"
+}
+
+# Use o código gerado nos próximos testes
+
+### 8.2 Primeira tentativa com código errado
+POST {{authURL}}/password/confirm/
+Content-Type: application/json
+
+{
+    "code": "000000",
+    "new_password": "novaSenha789",
+    "confirm_password": "novaSenha789"
+}
+
+# Esperado: Erro, attempts_used = 1
+
+### 8.3 Segunda tentativa com código errado
+POST {{authURL}}/password/confirm/
+Content-Type: application/json
+
+{
+    "code": "111111",
+    "new_password": "novaSenha789",
+    "confirm_password": "novaSenha789"
+}
+
+# Esperado: Erro, attempts_used = 2
+
+### 8.4 Terceira tentativa com código errado
+POST {{authURL}}/password/confirm/
+Content-Type: application/json
+
+{
+    "code": "222222",
+    "new_password": "novaSenha789",
+    "confirm_password": "novaSenha789"
+}
+
+# Esperado: Erro, attempts_used = 3
+
+### 8.5 Quarta tentativa (deve ser bloqueada)
+POST {{authURL}}/password/confirm/
+Content-Type: application/json
+
+{
+    "code": "333333",
+    "new_password": "novaSenha789",
+    "confirm_password": "novaSenha789"
+}
+
+# Esperado:
+# - Status 400 Bad Request
+# - Erro: "Código bloqueado por excesso de tentativas"
+
+### 8.6 Tentar usar código correto após bloqueio (deve dar erro)
+POST {{authURL}}/password/confirm/
+Content-Type: application/json
+
+{
+    "code": "CODIGO_CORRETO_AQUI",
+    "new_password": "novaSenha789",
+    "confirm_password": "novaSenha789"
+}
+
+# Esperado:
+# - Status 400 Bad Request
+# - Código está bloqueado mesmo sendo correto
+
+# ==============================================================================
+# 🔄 9. TESTE DE EXPIRAÇÃO (SIMULAÇÃO)
+# ==============================================================================
+
+### 9.1 Gerar código e aguardar expiração (30 minutos)
+POST {{authURL}}/password/reset/
+Content-Type: application/json
+
+{
+    "email": "{{testEmail}}"
+}
+
+# Para testar expiração, você pode:
+# 1. Aguardar 30 minutos e tentar usar o código
+# 2. OU modificar temporariamente o tempo de expiração no código
+# 3. OU usar endpoint de debug para verificar códigos expirados
+
+### 9.2 Verificar código expirado (após 30 minutos)
+POST {{authURL}}/password/check-code/
+Content-Type: application/json
+
+{
+    "code": "CODIGO_GERADO_HA_30_MINUTOS"
+}
+
+# Esperado:
+# - Status 400 Bad Request
+# - Erro: "Código inválido, expirado ou já usado"
+
+# ==============================================================================
+# 📊 10. COMPARAÇÃO COM SISTEMA ANTERIOR
+# ==============================================================================
+
+### 10.1 Testar endpoint antigo (se ainda existir)
+GET {{authURL}}/password/test-token/TOKEN_ANTIGO/
+Content-Type: application/json
+
+# Este endpoint pode não existir mais ou retornar erro
+# O novo sistema usa códigos de 6 dígitos ao invés de tokens longos
+
+# ==============================================================================
+# 📝 RESUMO DAS MUDANÇAS
+# ==============================================================================
+
+"""
+🔄 PRINCIPAIS MUDANÇAS NO SISTEMA:
+
+1. **CÓDIGO DE 6 DÍGITOS:**
+   - Antes: token longo (64+ caracteres)
+   - Agora: código de 6 dígitos (ex: "123456")
+
+2. **EXPIRAÇÃO REDUZIDA:**
+   - Antes: 24 horas
+   - Agora: 30 minutos
+
+3. **LIMITE DE TENTATIVAS:**
+   - Antes: 5 tentativas
+   - Agora: 3 tentativas
+
+4. **EMAIL PROFISSIONAL:**
+   - Antes: link para click
+   - Agora: código destacado para digitar
+
+5. **NOVOS ENDPOINTS:**
+   - POST /api/auth/password/check-code/ (verificar sem consumir)
+   - GET /api/auth/debug/reset-codes/ (admin debug)
+   - POST /api/auth/debug/generate-code/ (admin debug)
+
+6. **MELHOR SEGURANÇA:**
+   - Códigos criptograficamente seguros
+   - Evita códigos sequenciais (123456, 000000)
+   - Hash SHA-256 para armazenamento
+
+🎯 FLUXO DO USUÁRIO:
+1. Toca "Esqueci minha senha" no app
+2. Digita email
+3. Recebe código por email
+4. Digita código no app
+5. Escolhe nova senha
+6. Pronto!
+
+🔧 PARA DESENVOLVEDORES:
+- Use endpoints de debug para testar
+- Logs detalhados no terminal Django
+- Códigos visíveis no console em desenvolvimento
+- Sistema retrocompatível
+"""
+
+# ==============================================================================
+# 🎯 PRÓXIMOS TESTES RECOMENDADOS
+# ==============================================================================
+
+# 1. Teste com email real (configure SMTP)
+# 2. Teste em dispositivo móvel
+# 3. Teste de carga (muitos códigos simultâneos)
+# 4. Teste de segurança (force brute)
+# 5. Teste de usabilidade (facilidade de digitação)
