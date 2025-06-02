@@ -5,8 +5,8 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { LoadingSpinner } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
-import HomeScreen from '../screens/HomeScreen';
 import AuthNavigator from './AuthNavigator';
+import MainNavigator from './MainNavigator'; // ← NOVO NAVIGATOR
 
 // ==============================================================================
 // 🌐 NAVEGADOR PRINCIPAL CORRIGIDO
@@ -29,8 +29,8 @@ export default function RootNavigator() {
   return (
     <NavigationContainer>
       {isAuthenticated ? (
-        // Usuário autenticado - mostrar tela principal diretamente
-        <HomeScreen />
+        // ✅ CORRIGIDO: Usuário autenticado - usar navigator apropriado
+        <MainNavigator />
       ) : (
         // Usuário não autenticado - mostrar navegador de auth
         <AuthNavigator />
