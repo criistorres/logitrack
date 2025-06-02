@@ -1,66 +1,71 @@
-// mobile/src/screens/auth/ForgotPasswordScreen.tsx - VERSÃO SIMPLIFICADA
-
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
-} from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Button, Card, Input, ScreenContainer } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
-
-// ==============================================================================
-// 🔄 FORGOT PASSWORD SCREEN SIMPLIFICADO
-// ==============================================================================
 
 export function ForgotPasswordScreen() {
   const navigation = useNavigation();
   const { requestPasswordReset, confirmPasswordReset } = useAuth();
   
   const [step, setStep] = useState<'email' | 'code'>('email');
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    code: '',
+    new_password: '',
+    confirm_password: ''
+  });
+  
   const [loading, setLoading] = useState(false);
   
-  console.log('🔄 ForgotPasswordScreen: Renderizando versão simplificada');
+  console.log('🔄 ForgotPasswordScreen: Renderizando versão profissional');
+  
+  const updateField = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
   
   const handleRequestReset = async () => {
-    if (!email.trim()) {
-      Alert.alert('Erro', 'Digite seu email');
+    if (!formData.email.trim()) {
+      Alert.alert('Email Obrigatório', 'Por favor, digite seu email para continuar.');
+      return;
+    }
+    
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      Alert.alert('Email Inválido', 'Por favor, digite um email válido.');
       return;
     }
     
     setLoading(true);
     
     try {
-      const result = await requestPasswordReset(email.trim());
+      const result = await requestPasswordReset(formData.email.trim().toLowerCase());
       
       Alert.alert(
-        'Código Enviado!',
-        'Um código de 6 dígitos foi enviado para seu email.',
-        [{ text: 'OK', onPress: () => setStep('code') }]
+        'Código Enviado! 📧',
+        'Um código de 6 dígitos foi enviado para seu email. O código expira em 30 minutos.',
+        [{ text: 'Continuar', onPress: () => setStep('code') }]
       );
     } catch (error) {
-      Alert.alert('Erro', 'Erro ao enviar código');
+      Alert.alert('Erro', 'Não foi possível enviar o código. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
   
   const handleConfirmReset = async () => {
-    if (!code.trim() || !newPassword || !confirmPassword) {
-      Alert.alert('Erro', 'Preencha todos os campos');
+    // Validações
+    if (!formData.code.trim() || formData.code.length !== 6) {
+      Alert.alert('Código Inválido', 'Digite o código de 6 dígitos enviado para seu email.');
       return;
     }
     
-    if (newPassword !== confirmPassword) {
-      Alert.alert('Erro', 'Senhas não coincidem');
+    if (!formData.new_password || formData.new_password.length < 8) {
+      Alert.alert('Senha Fraca', 'A nova senha deve ter pelo menos 8 caracteres.');
+      return;
+    }
+    
+    if (formData.new_password !== formData.confirm_password) {
+      Alert.alert('Senhas Diferentes', 'As senhas digitadas não coincidem.');
       return;
     }
     
@@ -68,202 +73,187 @@ export function ForgotPasswordScreen() {
     
     try {
       const result = await confirmPasswordReset({
-        code: code.trim(),
-        new_password: newPassword,
-        confirm_password: confirmPassword
+        code: formData.code.trim(),
+        new_password: formData.new_password,
+        confirm_password: formData.confirm_password
       });
       
       if (result.success) {
         Alert.alert(
-          'Sucesso!',
-          'Senha redefinida com sucesso!',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login' as never) }]
+          'Senha Redefinida! 🎉',
+          'Sua senha foi alterada com sucesso. Faça login com a nova senha.',
+          [{ text: 'Fazer Login', onPress: () => navigation.navigate('Login' as never) }]
         );
       } else {
-        Alert.alert('Erro', result.message || 'Código inválido');
+        Alert.alert('Erro', result.message || 'Código inválido ou expirado.');
       }
     } catch (error) {
-      Alert.alert('Erro', 'Erro ao redefinir senha');
+      Alert.alert('Erro', 'Não foi possível redefinir a senha. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
   
+  const goToLogin = () => {
+    navigation.navigate('Login' as never);
+  };
+  
   return (
-    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      {/* Header */}
-      <View style={{ 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        padding: 20, 
-        paddingTop: 50,
-        backgroundColor: 'white',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee'
-      }}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={{ fontSize: 18, color: '#3b82f6' }}>← Voltar</Text>
-        </TouchableOpacity>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 20 }}>Redefinir Senha</Text>
-      </View>
-      
-      <ScrollView style={{ flex: 1, padding: 20 }}>
-        <View style={{ 
-          backgroundColor: 'white', 
-          padding: 20, 
-          borderRadius: 10,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 3,
-        }}>
+    <ScreenContainer 
+      title="Redefinir Senha"
+      subtitle="Recupere o acesso à sua conta"
+      showBackButton 
+      onBackPress={() => navigation.goBack()}
+    >
+      <ScrollView className="flex-1 px-5 py-6" showsVerticalScrollIndicator={false}>
+        
+        {/* Header */}
+        <View className="items-center mb-8">
+          <View className="w-20 h-20 bg-warning-500 rounded-2xl items-center justify-center shadow-lg shadow-warning-500/30 mb-4">
+            <Text className="text-white text-3xl">{step === 'email' ? '🔐' : '📧'}</Text>
+          </View>
+          <Text className="text-2xl font-bold text-neutral-900 mb-2">
+            {step === 'email' ? 'Esqueceu sua senha?' : 'Digite o código'}
+          </Text>
+          <Text className="text-neutral-600 text-center">
+            {step === 'email' 
+              ? 'Digite seu email para receber um código de redefinição'
+              : 'Enviamos um código de 6 dígitos para seu email'
+            }
+          </Text>
+        </View>
+        
+        <Card variant="elevated" padding="lg" className="mb-6">
           
           {step === 'email' ? (
             <>
-              <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' }}>
-                Esqueceu sua senha?
-              </Text>
-              <Text style={{ color: '#666', marginBottom: 25, textAlign: 'center' }}>
-                Digite seu email para receber um código de redefinição
-              </Text>
-              
-              <Text style={{ marginBottom: 5, fontWeight: '600' }}>Email</Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#ddd',
-                  padding: 12,
-                  borderRadius: 8,
-                  marginBottom: 25,
-                  fontSize: 16
-                }}
+              <Input
+                label="Email da Conta"
                 placeholder="Digite seu email cadastrado"
-                value={email}
-                onChangeText={setEmail}
+                value={formData.email}
+                onChangeText={(text) => updateField('email', text)}
+                leftIcon="📧"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoCorrect={false}
+                variant="outlined"
+                size="lg"
+                required
               />
               
-              <TouchableOpacity
+              <Button
+                title="Enviar Código de Redefinição"
                 onPress={handleRequestReset}
-                disabled={loading}
-                style={{
-                  backgroundColor: loading ? '#ccc' : '#3b82f6',
-                  padding: 15,
-                  borderRadius: 8,
-                  alignItems: 'center',
-                  marginBottom: 15
-                }}
-              >
-                {loading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Enviar Código</Text>
-                )}
-              </TouchableOpacity>
+                loading={loading}
+                variant="primary"
+                size="lg"
+                leftIcon="📤"
+                fullWidth
+                className="mb-4"
+              />
             </>
           ) : (
             <>
-              <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' }}>
-                Digite o código
-              </Text>
+              {/* Info do Email */}
+              <Card variant="filled" padding="md" className="mb-6 bg-primary-50 border-primary-200">
+                <View className="flex-row items-center">
+                  <Text className="text-primary-500 mr-3 text-lg">📧</Text>
+                  <View className="flex-1">
+                    <Text className="text-primary-700 font-semibold text-sm">Código enviado para:</Text>
+                    <Text className="text-primary-600 text-sm">{formData.email}</Text>
+                  </View>
+                </View>
+              </Card>
               
-              <View style={{ 
-                backgroundColor: '#e3f2fd', 
-                padding: 15, 
-                borderRadius: 8, 
-                marginBottom: 20 
-              }}>
-                <Text style={{ color: '#1976d2', textAlign: 'center', fontSize: 14 }}>
-                  📧 Código enviado para: {email}
-                </Text>
-              </View>
-              
-              <Text style={{ marginBottom: 5, fontWeight: '600' }}>Código de 6 dígitos</Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#ddd',
-                  padding: 12,
-                  borderRadius: 8,
-                  marginBottom: 15,
-                  fontSize: 16,
-                  textAlign: 'center',
-                  letterSpacing: 2
-                }}
+              <Input
+                label="Código de 6 Dígitos"
                 placeholder="123456"
-                value={code}
-                onChangeText={(text) => setCode(text.replace(/\D/g, '').slice(0, 6))}
+                value={formData.code}
+                onChangeText={(text) => updateField('code', text.replace(/\D/g, '').slice(0, 6))}
+                leftIcon="🔢"
                 keyboardType="numeric"
                 maxLength={6}
+                variant="outlined"
+                size="lg"
+                hint="Verifique sua caixa de entrada e spam"
+                required
               />
               
-              <Text style={{ marginBottom: 5, fontWeight: '600' }}>Nova Senha</Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#ddd',
-                  padding: 12,
-                  borderRadius: 8,
-                  marginBottom: 15,
-                  fontSize: 16
-                }}
+              <Input
+                label="Nova Senha"
                 placeholder="Mínimo 8 caracteres"
-                value={newPassword}
-                onChangeText={setNewPassword}
+                value={formData.new_password}
+                onChangeText={(text) => updateField('new_password', text)}
+                leftIcon="🔐"
                 secureTextEntry
+                variant="outlined"
+                size="lg"
+                required
               />
               
-              <Text style={{ marginBottom: 5, fontWeight: '600' }}>Confirmar Nova Senha</Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#ddd',
-                  padding: 12,
-                  borderRadius: 8,
-                  marginBottom: 25,
-                  fontSize: 16
-                }}
+              <Input
+                label="Confirmar Nova Senha"
                 placeholder="Digite a senha novamente"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                value={formData.confirm_password}
+                onChangeText={(text) => updateField('confirm_password', text)}
+                leftIcon="🔐"
                 secureTextEntry
+                variant="outlined"
+                size="lg"
+                required
               />
               
-              <TouchableOpacity
+              <Button
+                title="Redefinir Minha Senha"
                 onPress={handleConfirmReset}
-                disabled={loading}
-                style={{
-                  backgroundColor: loading ? '#ccc' : '#3b82f6',
-                  padding: 15,
-                  borderRadius: 8,
-                  alignItems: 'center',
-                  marginBottom: 15
-                }}
-              >
-                {loading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Redefinir Senha</Text>
-                )}
-              </TouchableOpacity>
+                loading={loading}
+                variant="success"
+                size="lg"
+                leftIcon="✅"
+                fullWidth
+                className="mb-4"
+              />
               
-              <TouchableOpacity onPress={() => setStep('email')}>
-                <Text style={{ color: '#3b82f6', textAlign: 'center' }}>← Voltar para email</Text>
-              </TouchableOpacity>
+              {/* Voltar para Email */}
+              <Button
+                title="← Voltar para Email"
+                onPress={() => setStep('email')}
+                variant="ghost"
+                size="md"
+                className="mb-2"
+              />
             </>
           )}
           
           {/* Link Login */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 15 }}>
-            <Text style={{ color: '#666' }}>Lembrou da senha? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login' as never)}>
-              <Text style={{ color: '#3b82f6', fontWeight: '600' }}>Fazer login</Text>
-            </TouchableOpacity>
+          <View className="flex-row justify-center items-center">
+            <Text className="text-neutral-600">Lembrou da senha? </Text>
+            <Text
+              onPress={goToLogin}
+              className="text-primary-500 font-semibold active:text-primary-600"
+            >
+              Fazer login
+            </Text>
           </View>
-        </View>
+        </Card>
+        
+        {/* Dicas de Segurança */}
+        <Card variant="outlined" padding="md" className="border-neutral-200">
+          <View className="flex-row items-start">
+            <Text className="text-neutral-400 mr-3 text-lg">💡</Text>
+            <View className="flex-1">
+              <Text className="text-neutral-700 font-semibold mb-1">Dicas de Segurança</Text>
+              <Text className="text-neutral-600 text-sm leading-5">
+                • O código expira em 30 minutos{'\n'}
+                • Máximo 3 tentativas por código{'\n'}
+                • Use uma senha forte e única{'\n'}
+                • Não compartilhe seu código com ninguém
+              </Text>
+            </View>
+          </View>
+        </Card>
+        
       </ScrollView>
-    </View>
+    </ScreenContainer>
   );
 }

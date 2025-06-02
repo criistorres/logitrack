@@ -120,7 +120,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // ==============================================================================
   // 🔄 VERIFICAR STATUS DE AUTENTICAÇÃO NO INÍCIO
   // ==============================================================================
-  
+  const DEVELOPMENT_IP = '192.168.0.7'
   useEffect(() => {
     checkAuthStatus();
   }, []);
@@ -168,11 +168,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       setIsLoading(true);
       
-      // Chamar serviço de login
+      // 🔧 CORREÇÃO: Usar authService que já está configurado corretamente
       const response = await authService.login(credentials);
-      console.log('🔐 AuthContext: Login bem-sucedido');
+      console.log('🔐 AuthContext: Resposta do authService:', response);
       
-      // Atualizar estado local
+      // ✅ authService já salva os tokens automaticamente no AsyncStorage
+      // ✅ Apenas atualizar o estado local
       setUser(response.user);
       
       console.log(`✅ AuthContext: Usuário logado: ${response.user.email}`);
@@ -241,7 +242,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
       
       // Chamar API de registro
-      const response = await fetch('http://localhost:8000/api/auth/register/', {
+      const response = await fetch(`http://${DEVELOPMENT_IP}:8000/api/auth/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -323,7 +324,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🔄 AuthContext: Solicitando reset de senha...');
       console.log(`🔄 Email: ${email}`);
       
-      const response = await fetch('http://localhost:8000/api/auth/password/reset/', {
+      const response = await fetch(`http://${DEVELOPMENT_IP}:8000/api/auth/password/reset/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -354,7 +355,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🔄 AuthContext: Confirmando reset de senha...');
       console.log(`🔄 Código: ${data.code}`);
       
-      const response = await fetch('http://localhost:8000/api/auth/password/confirm/', {
+      const response = await fetch(`http://${DEVELOPMENT_IP}:8000/api/auth/password/confirm/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

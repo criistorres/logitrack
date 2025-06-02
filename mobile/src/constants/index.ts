@@ -1,8 +1,13 @@
 // Configurações da API (para uso futuro)
+const DEVELOPMENT_IP = '192.168.0.7'
+
+// Configurações da API
 export const API_CONFIG = {
-    BASE_URL: __DEV__ ? 'http://localhost:8000' : 'https://api.logitrack.com',
-    TIMEOUT: 10000,
-  };
+  BASE_URL: __DEV__ 
+    ? `http://${DEVELOPMENT_IP}:8000`    // Desenvolvimento: IP da rede local
+    : 'https://api.logitrack.com',       // Produção: domínio real
+  TIMEOUT: 10000,
+};
   
   // Cores do tema (além do Tailwind)
   export const COLORS = {

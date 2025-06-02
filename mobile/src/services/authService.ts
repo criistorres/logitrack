@@ -45,22 +45,38 @@ class AuthService {
    */
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
-      const response = await apiService.post<LoginResponse>('/auth/login/', credentials);
+      const response = await apiService.post<any>('/auth/login/', credentials);
+      
+      console.log('🔐 AuthService: Resposta completa da API:', response.data);
+      
+      // ✅ CORREÇÃO: Extrair tokens da estrutura correta da API
+      const { data } = response.data; // Primeira camada
+      const { user, tokens } = data;   // Segunda camada
+      
+      console.log('🔐 AuthService: Tokens extraídos:', tokens);
+      console.log('🔐 AuthService: Usuário extraído:', user);
       
       // Salvar tokens no AsyncStorage
       await AsyncStorage.multiSet([
-        ['@LogiTrack:token', response.data.access],
-        ['@LogiTrack:refreshToken', response.data.refresh],
-        ['@LogiTrack:user', JSON.stringify(response.data.user)],
+        ['@LogiTrack:token', tokens.access],           // ✅ Usar tokens.access
+        ['@LogiTrack:refreshToken', tokens.refresh],   // ✅ Usar tokens.refresh
+        ['@LogiTrack:user', JSON.stringify(user)],
       ]);
       
-      return response.data;
+      console.log('✅ AuthService: Tokens salvos no AsyncStorage');
+      
+      // Retornar estrutura consistente
+      return {
+        user,
+        access: tokens.access,
+        refresh: tokens.refresh
+      };
+      
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('❌ AuthService: Erro no login:', error);
       throw error;
     }
   }
-  
   /**
    * Realizar logout
    */

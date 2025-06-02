@@ -36,8 +36,20 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-sua-chave-aqui-develo
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 # Hosts permitidos - adicionar domínio em produção
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+    # Adicione seu IP específico aqui (substitua XXX.XXX.X.XXX pelo seu IP real)
+    '192.168.0.7',  # ← SUBSTITUA pelo seu IP real
+    # Adicione outros IPs se necessário
+    '192.168.0.1',    # Gateway comum
+    '10.0.0.1',       # Rede alternativa
+]
 
+# Para desenvolvimento, você pode usar (MENOS SEGURO, mas funciona):
+if DEBUG:
+    ALLOWED_HOSTS = ['*']  # Permite qualquer IP em desenvolvimento
 # ==============================================================================
 # APLICAÇÕES DJANGO
 # ==============================================================================
@@ -258,10 +270,13 @@ SIMPLE_JWT = {
 
 # Permitir requisições do frontend durante desenvolvimento
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",    # React.js (frontend web)
-    "http://127.0.0.1:3000",   # React.js alternativo
-    "http://localhost:8081",   # React Native (Expo)
-    "http://127.0.0.1:8081",   # React Native alternativo
+    "http://localhost:3000",      # React.js (frontend web)
+    "http://127.0.0.1:3000",     # React.js alternativo
+    "http://localhost:8081",     # React Native (Expo)
+    "http://127.0.0.1:8081",     # React Native alternativo
+    # ADICIONE SEU IP AQUI:
+    "http://192.168.0.7:8000", # ← SUBSTITUA pelo seu IP real
+    "http://192.168.0.7:8081", # ← Para Expo no seu IP
 ]
 
 # Para desenvolvimento - permite qualquer origem (REMOVER EM PRODUÇÃO!)

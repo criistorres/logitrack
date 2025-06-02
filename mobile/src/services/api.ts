@@ -1,15 +1,16 @@
 // src/services/api.ts
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 
 /**
  * URL base da API
  * Em desenvolvimento aponta para localhost
  * Em produção deve apontar para o servidor real
  */
+const DEVELOPMENT_IP = '192.168.0.7'
 const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:8000/api' 
+  ? `http://${DEVELOPMENT_IP}:8000/api`  // ← IP da rede local + /api
   : 'https://api.logitrack.com/api';
 
 /**

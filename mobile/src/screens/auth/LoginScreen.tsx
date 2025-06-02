@@ -1,21 +1,8 @@
-// mobile/src/screens/auth/LoginScreen.tsx - ULTRA SIMPLIFICADO
-
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
-} from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Button, Card, Input, ScreenContainer } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
-
-// ==============================================================================
-// 🔐 LOGIN SCREEN ULTRA SIMPLIFICADO
-// ==============================================================================
 
 export default function LoginScreen() {
   const navigation = useNavigation();
@@ -25,11 +12,11 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   
-  console.log('🔐 LoginScreen: Renderizando versão ultra simplificada');
+  console.log('🔐 LoginScreen: Renderizando versão profissional');
   
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Erro', 'Preencha email e senha');
+      Alert.alert('Dados Incompletos', 'Por favor, preencha email e senha para continuar.');
       return;
     }
     
@@ -39,10 +26,10 @@ export default function LoginScreen() {
       const result = await login({ email: email.trim(), password });
       
       if (!result.success) {
-        Alert.alert('Erro', result.message || 'Email ou senha incorretos');
+        Alert.alert('Erro no Login', result.message || 'Credenciais inválidas. Verifique seu email e senha.');
       }
     } catch (error) {
-      Alert.alert('Erro', 'Erro de conexão');
+      Alert.alert('Erro de Conexão', 'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -57,170 +44,140 @@ export default function LoginScreen() {
   };
   
   return (
-    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      {/* Status bar space */}
-      <View style={{ height: 50 }} />
-      
-      <ScrollView 
-        contentContainerStyle={{ 
-          flexGrow: 1, 
-          justifyContent: 'center', 
-          padding: 20 
-        }}
-      >
-        
-        {/* Logo */}
-        <View style={{ alignItems: 'center', marginBottom: 40 }}>
-          <View style={{ 
-            width: 80, 
-            height: 80, 
-            backgroundColor: '#3b82f6', 
-            borderRadius: 40, 
-            justifyContent: 'center', 
-            alignItems: 'center',
-            marginBottom: 20
-          }}>
-            <Text style={{ color: 'white', fontSize: 30 }}>🚛</Text>
-          </View>
-          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#333' }}>
-            LogiTrack
-          </Text>
-          <Text style={{ color: '#666', textAlign: 'center' }}>
-            Sistema de Gerenciamento de Transporte
-          </Text>
-        </View>
-        
-        {/* Form */}
-        <View style={{ 
-          backgroundColor: 'white', 
-          padding: 20, 
-          borderRadius: 10, 
-          marginBottom: 20,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 3,
-        }}>
-          <Text style={{ 
-            fontSize: 24, 
-            fontWeight: 'bold', 
-            marginBottom: 20, 
-            textAlign: 'center' 
-          }}>
-            Bem-vindo!
-          </Text>
+    <ScreenContainer className="bg-gradient-to-br from-neutral-50 to-primary-50" safeArea={false}>
+      <View className="flex-1 pt-16">
+        <ScrollView 
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}
+          showsVerticalScrollIndicator={false}
+        >
           
-          {/* Email */}
-          <Text style={{ marginBottom: 5, fontWeight: '600' }}>Email</Text>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: '#ddd',
-              padding: 12,
-              borderRadius: 8,
-              marginBottom: 15,
-              fontSize: 16,
-              backgroundColor: 'white'
-            }}
-            placeholder="Digite seu email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          
-          {/* Password */}
-          <Text style={{ marginBottom: 5, fontWeight: '600' }}>Senha</Text>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: '#ddd',
-              padding: 12,
-              borderRadius: 8,
-              marginBottom: 20,
-              fontSize: 16,
-              backgroundColor: 'white'
-            }}
-            placeholder="Digite sua senha"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          
-          {/* Forgot Password */}
-          <TouchableOpacity 
-            onPress={goToForgotPassword} 
-            style={{ marginBottom: 20 }}
-          >
-            <Text style={{ 
-              color: '#3b82f6', 
-              textAlign: 'right', 
-              fontSize: 14 
-            }}>
-              Esqueci minha senha
+          {/* Header com Logo */}
+          <View className="items-center mb-12">
+            {/* Logo Container */}
+            <View className="relative mb-6">
+              <View className="w-28 h-28 bg-primary-500 rounded-3xl items-center justify-center shadow-xl shadow-primary-500/30">
+                <Text className="text-white text-5xl">🚛</Text>
+              </View>
+              {/* Accent Badge */}
+              <View className="absolute -bottom-2 -right-2 w-8 h-8 bg-accent-500 rounded-full items-center justify-center border-4 border-white shadow-lg">
+                <Text className="text-white text-sm">✓</Text>
+              </View>
+            </View>
+            
+            {/* Brand */}
+            <Text className="text-4xl font-bold text-neutral-900 mb-2">
+              LogiTrack
             </Text>
-          </TouchableOpacity>
+            <Text className="text-neutral-600 text-center text-base leading-6 max-w-xs">
+              Sistema Profissional de{'\n'}Gerenciamento de Transporte
+            </Text>
+          </View>
           
-          {/* Login Button */}
-          <TouchableOpacity
-            onPress={handleLogin}
-            disabled={loading}
-            style={{
-              backgroundColor: loading ? '#ccc' : '#3b82f6',
-              padding: 15,
-              borderRadius: 8,
-              alignItems: 'center',
-              marginBottom: 15
-            }}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>
-                Entrar
+          {/* Form Card */}
+          <Card variant="elevated" padding="lg" className="mb-6">
+            <View className="mb-6">
+              <Text className="text-2xl font-bold text-neutral-900 mb-2">
+                Bem-vindo de volta! 👋
               </Text>
-            )}
-          </TouchableOpacity>
-          
-          {/* Register Link */}
-          <View style={{ 
-            flexDirection: 'row', 
-            justifyContent: 'center' 
-          }}>
-            <Text style={{ color: '#666' }}>Não tem conta? </Text>
-            <TouchableOpacity onPress={goToRegister}>
-              <Text style={{ color: '#3b82f6', fontWeight: '600' }}>
-                Criar conta
+              <Text className="text-neutral-600">
+                Faça login para acessar sua conta
               </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        
-        {/* Debug Info */}
-        {__DEV__ && (
-          <View style={{ 
-            backgroundColor: '#fff3cd', 
-            padding: 15, 
-            borderRadius: 8,
-            borderLeftWidth: 4,
-            borderLeftColor: '#ffc107'
-          }}>
-            <Text style={{ color: '#856404', fontSize: 12, fontWeight: 'bold' }}>
-              🔧 VERSÃO ULTRA SIMPLIFICADA
+            </View>
+            
+            {/* Email Input */}
+            <Input
+              label="Email"
+              placeholder="Digite seu email profissional"
+              value={email}
+              onChangeText={setEmail}
+              leftIcon="📧"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              variant="outlined"
+              size="lg"
+              required
+            />
+            
+            {/* Password Input */}
+            <Input
+              label="Senha"
+              placeholder="Digite sua senha"
+              value={password}
+              onChangeText={setPassword}
+              leftIcon="🔒"
+              secureTextEntry
+              variant="outlined"
+              size="lg"
+              required
+            />
+            
+            {/* Forgot Password Link */}
+            <View className="mb-6">
+              <Text
+                onPress={goToForgotPassword}
+                className="text-primary-500 text-right font-semibold text-base active:text-primary-600"
+              >
+                Esqueci minha senha
+              </Text>
+            </View>
+            
+            {/* Login Button */}
+            <Button
+              title="Entrar na Plataforma"
+              onPress={handleLogin}
+              loading={loading}
+              variant="primary"
+              size="lg"
+              leftIcon="🚀"
+              fullWidth
+              className="mb-4"
+            />
+            
+            {/* Divider */}
+            <View className="flex-row items-center my-6">
+              <View className="flex-1 h-px bg-neutral-200" />
+              <Text className="mx-4 text-neutral-500 text-sm">ou</Text>
+              <View className="flex-1 h-px bg-neutral-200" />
+            </View>
+            
+            {/* Register Link */}
+            <View className="flex-row justify-center items-center">
+              <Text className="text-neutral-600 text-base">Ainda não tem conta? </Text>
+              <Text
+                onPress={goToRegister}
+                className="text-primary-500 font-semibold text-base active:text-primary-600"
+              >
+                Criar conta gratuita
+              </Text>
+            </View>
+          </Card>
+          
+          {/* Footer Info */}
+          <View className="items-center mt-6">
+            <Text className="text-neutral-400 text-sm text-center leading-5">
+              Ao fazer login, você concorda com nossos{'\n'}
+              <Text className="text-primary-500 font-medium">Termos de Uso</Text> e {' '}
+              <Text className="text-primary-500 font-medium">Política de Privacidade</Text>
             </Text>
-            <Text style={{ color: '#856404', fontSize: 10, marginTop: 5 }}>
-              ✅ Sem componentes customizados{'\n'}
-              ✅ Sem SafeAreaView{'\n'}
-              ✅ Navegação direta{'\n'}
-              ✅ Estrutura mínima{'\n'}
-              ✅ Deve funcionar sem erros
-            </Text>
           </View>
-        )}
-        
-      </ScrollView>
-    </View>
+          
+          {/* Debug Badge */}
+          {__DEV__ && (
+            <Card variant="outlined" padding="sm" className="mt-6 border-warning-200 bg-warning-50">
+              <View className="flex-row items-center">
+                <Text className="text-warning-600 mr-2">🔧</Text>
+                <View className="flex-1">
+                  <Text className="text-warning-700 font-semibold text-sm">Versão de Desenvolvimento</Text>
+                  <Text className="text-warning-600 text-xs">Design Profissional • Paleta LogiTrack • Tailwind CSS</Text>
+                </View>
+              </View>
+            </Card>
+          )}
+          
+        </ScrollView>
+      </View>
+    </ScreenContainer>
   );
 }
