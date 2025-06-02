@@ -1,14 +1,12 @@
-// src/components/ui/Input.tsx
+// mobile/src/components/Input.tsx - VERSÃO TAILWIND
 
-import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Text,
-    TextInput,
-    TextInputProps,
-    TouchableOpacity,
-    View
+  Text,
+  TextInput,
+  TextInputProps,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 // ==============================================================================
@@ -19,29 +17,29 @@ interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   hint?: string;
-  leftIcon?: keyof typeof Ionicons.glyphMap;
-  rightIcon?: keyof typeof Ionicons.glyphMap;
+  required?: boolean;
+  leftIcon?: string;
+  rightIcon?: string;
   onRightIconPress?: () => void;
   containerClassName?: string;
   inputClassName?: string;
-  required?: boolean;
 }
 
 // ==============================================================================
-// 🎨 COMPONENTE INPUT
+// 🎨 COMPONENTE INPUT COM TAILWIND
 // ==============================================================================
 
 export function Input({
   label,
   error,
   hint,
+  required = false,
   leftIcon,
   rightIcon,
   onRightIconPress,
+  secureTextEntry,
   containerClassName = '',
   inputClassName = '',
-  required = false,
-  secureTextEntry,
   ...props
 }: InputProps) {
   const [isSecureTextVisible, setIsSecureTextVisible] = useState(false);
@@ -50,7 +48,7 @@ export function Input({
   // Se é campo de senha, mostrar ícone de olho
   const showPasswordToggle = secureTextEntry !== undefined;
   const finalRightIcon = showPasswordToggle 
-    ? (isSecureTextVisible ? 'eye-outline' : 'eye-off-outline')
+    ? (isSecureTextVisible ? '👁️' : '🙈')
     : rightIcon;
   
   const handleRightIconPress = () => {
@@ -65,29 +63,29 @@ export function Input({
     <View className={`mb-4 ${containerClassName}`}>
       {/* Label */}
       {label && (
-        <Text className="text-gray-700 text-sm font-medium mb-2">
-          {label}
-          {required && <Text className="text-red-500 ml-1">*</Text>}
-        </Text>
+        <View className="flex-row mb-2">
+          <Text className="text-gray-700 text-sm font-semibold">
+            {label}
+          </Text>
+          {required && (
+            <Text className="text-red-500 ml-1">*</Text>
+          )}
+        </View>
       )}
       
       {/* Input Container */}
-      <View 
-        className={`
-          flex-row items-center
-          bg-white border rounded-lg px-3 py-3
-          ${isFocused ? 'border-blue-500 shadow-sm' : 'border-gray-300'}
-          ${error ? 'border-red-500' : ''}
-        `}
-      >
+      <View className={`
+        flex-row items-center bg-white border rounded-lg px-3 py-3
+        ${isFocused 
+          ? (error ? 'border-red-500' : 'border-blue-500 shadow-sm') 
+          : (error ? 'border-red-500' : 'border-gray-300')
+        }
+      `}>
         {/* Left Icon */}
         {leftIcon && (
-          <Ionicons 
-            name={leftIcon} 
-            size={20} 
-            color={isFocused ? '#3b82f6' : '#9ca3af'} 
-            style={{ marginRight: 12 }}
-          />
+          <Text className={`text-lg mr-3 ${isFocused ? 'text-blue-500' : 'text-gray-400'}`}>
+            {leftIcon}
+          </Text>
         )}
         
         {/* Text Input */}
@@ -104,21 +102,19 @@ export function Input({
         {finalRightIcon && (
           <TouchableOpacity
             onPress={handleRightIconPress}
-            className="ml-2 p-1"
+            className="ml-3 p-1"
             activeOpacity={0.7}
           >
-            <Ionicons 
-              name={finalRightIcon} 
-              size={20} 
-              color={isFocused ? '#3b82f6' : '#9ca3af'} 
-            />
+            <Text className={`text-lg ${isFocused ? 'text-blue-500' : 'text-gray-400'}`}>
+              {finalRightIcon}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
       
       {/* Error Message */}
       {error && (
-        <Text className="text-red-500 text-sm mt-1 ml-1">
+        <Text className="text-red-500 text-xs mt-1 ml-1">
           {error}
         </Text>
       )}
@@ -134,7 +130,7 @@ export function Input({
 }
 
 // ==============================================================================
-// 🔘 COMPONENTE BUTTON
+// 🔘 COMPONENTE BUTTON COM TAILWIND
 // ==============================================================================
 
 interface ButtonProps {
@@ -144,8 +140,8 @@ interface ButtonProps {
   size?: 'small' | 'medium' | 'large';
   loading?: boolean;
   disabled?: boolean;
-  leftIcon?: keyof typeof Ionicons.glyphMap;
-  rightIcon?: keyof typeof Ionicons.glyphMap;
+  leftIcon?: string;
+  rightIcon?: string;
   className?: string;
 }
 
@@ -162,119 +158,93 @@ export function Button({
 }: ButtonProps) {
   const isDisabled = disabled || loading;
   
-  // Estilos baseados na variante
-  const variantStyles = {
+  // Classes base
+  const baseClasses = "flex-row items-center justify-center rounded-lg font-semibold";
+  
+  // Classes de variante
+  const variantClasses = {
     primary: `bg-blue-500 ${isDisabled ? 'opacity-50' : 'active:bg-blue-600'}`,
     secondary: `bg-gray-500 ${isDisabled ? 'opacity-50' : 'active:bg-gray-600'}`,
     outline: `border-2 border-blue-500 bg-transparent ${isDisabled ? 'opacity-50' : 'active:bg-blue-50'}`,
     ghost: `bg-transparent ${isDisabled ? 'opacity-50' : 'active:bg-gray-100'}`,
   };
   
-  // Estilos baseados no tamanho
-  const sizeStyles = {
+  // Classes de tamanho
+  const sizeClasses = {
     small: 'px-3 py-2',
     medium: 'px-4 py-3',
     large: 'px-6 py-4',
   };
   
-  // Cores do texto
-  const textColors = {
+  // Classes de texto baseadas na variante
+  const textVariantClasses = {
     primary: 'text-white',
     secondary: 'text-white',
     outline: 'text-blue-500',
     ghost: 'text-gray-700',
   };
   
-  // Tamanhos do texto
-  const textSizes = {
+  // Classes de tamanho do texto
+  const textSizeClasses = {
     small: 'text-sm',
     medium: 'text-base',
     large: 'text-lg',
   };
   
+  // Classes finais
+  const buttonClasses = `
+    ${baseClasses} 
+    ${variantClasses[variant]} 
+    ${sizeClasses[size]} 
+    ${className}
+  `.replace(/\s+/g, ' ').trim();
+  
+  const textClasses = `
+    font-semibold
+    ${textVariantClasses[variant]}
+    ${textSizeClasses[size]}
+    ${loading ? 'ml-2' : ''}
+  `.replace(/\s+/g, ' ').trim();
+  
+  // Tamanho dos ícones baseado no size
+  const iconSize = size === 'small' ? 'text-sm' : size === 'large' ? 'text-xl' : 'text-base';
+  
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={isDisabled}
+      className={buttonClasses}
       activeOpacity={0.8}
-      className={`
-        flex-row items-center justify-center
-        rounded-lg
-        ${variantStyles[variant]}
-        ${sizeStyles[size]}
-        ${className}
-      `}
     >
-      {/* Loading Spinner */}
+      {/* Loading Indicator */}
       {loading && (
-        <LoadingSpinner 
-          size="small" 
-          color={variant === 'outline' || variant === 'ghost' ? '#3b82f6' : '#ffffff'} 
-        />
+        <Text className={`${iconSize} mr-2`}>⏳</Text>
       )}
       
       {/* Left Icon */}
       {leftIcon && !loading && (
-        <Ionicons 
-          name={leftIcon} 
-          size={size === 'small' ? 16 : size === 'large' ? 24 : 20}
-          color={variant === 'outline' || variant === 'ghost' ? '#3b82f6' : '#ffffff'}
-          style={{ marginRight: 8 }}
-        />
+        <Text className={`${iconSize} mr-2`}>
+          {leftIcon}
+        </Text>
       )}
       
       {/* Title */}
-      <Text 
-        className={`
-          font-semibold
-          ${textColors[variant]}
-          ${textSizes[size]}
-          ${loading ? 'ml-2' : ''}
-        `}
-      >
+      <Text className={textClasses}>
         {loading ? 'Carregando...' : title}
       </Text>
       
       {/* Right Icon */}
       {rightIcon && !loading && (
-        <Ionicons 
-          name={rightIcon} 
-          size={size === 'small' ? 16 : size === 'large' ? 24 : 20}
-          color={variant === 'outline' || variant === 'ghost' ? '#3b82f6' : '#ffffff'}
-          style={{ marginLeft: 8 }}
-        />
+        <Text className={`${iconSize} ml-2`}>
+          {rightIcon}
+        </Text>
       )}
     </TouchableOpacity>
   );
 }
 
 // ==============================================================================
-// ⏳ COMPONENTE LOADING SPINNER
-// ==============================================================================
-
-interface LoadingSpinnerProps {
-  size?: 'small' | 'large';
-  color?: string;
-  className?: string;
-}
-
-export function LoadingSpinner({ 
-  size = 'large', 
-  color = '#3b82f6',
-  className = ''
-}: LoadingSpinnerProps) {
-  return (
-    <View className={`items-center justify-center ${className}`}>
-      <ActivityIndicator 
-        size={size} 
-        color={color} 
-      />
-    </View>
-  );
-}
-
-// ==============================================================================
-// 📱 COMPONENTE SCREEN CONTAINER
+// 📱 COMPONENTE SCREEN CONTAINER COM TAILWIND
 // ==============================================================================
 
 interface ScreenContainerProps {
@@ -296,26 +266,26 @@ export function ScreenContainer({
     <View className={`flex-1 bg-gray-50 ${className}`}>
       {/* Header */}
       {(showBackButton || title) && (
-        <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
+        <View className="flex-row items-center justify-between px-4 py-4 pt-12 bg-white border-b border-gray-200">
           {showBackButton ? (
             <TouchableOpacity
               onPress={onBackPress}
               className="p-2 -ml-2"
               activeOpacity={0.7}
             >
-              <Ionicons name="arrow-back" size={24} color="#374151" />
+              <Text className="text-blue-500 text-lg font-semibold">← Voltar</Text>
             </TouchableOpacity>
           ) : (
             <View />
           )}
           
           {title && (
-            <Text className="text-lg font-semibold text-gray-900">
+            <Text className="text-lg font-bold text-gray-900">
               {title}
             </Text>
           )}
           
-          <View style={{ width: 40 }} />
+          <View className="w-16" />
         </View>
       )}
       
@@ -326,7 +296,7 @@ export function ScreenContainer({
 }
 
 // ==============================================================================
-// 📋 COMPONENTE FORM CONTAINER
+// 📋 COMPONENTE FORM CONTAINER COM TAILWIND
 // ==============================================================================
 
 interface FormContainerProps {
@@ -343,14 +313,14 @@ export function FormContainer({
   className = ''
 }: FormContainerProps) {
   return (
-    <View className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+    <View className={`bg-white rounded-xl shadow-sm border border-gray-100 p-6 ${className}`}>
       {/* Header */}
       <View className="mb-6">
         <Text className="text-2xl font-bold text-gray-900 mb-2">
           {title}
         </Text>
         {subtitle && (
-          <Text className="text-gray-600">
+          <Text className="text-gray-600 text-center">
             {subtitle}
           </Text>
         )}
@@ -358,6 +328,35 @@ export function FormContainer({
       
       {/* Form Content */}
       {children}
+    </View>
+  );
+}
+
+// ==============================================================================
+// ⏳ COMPONENTE LOADING SPINNER COM TAILWIND
+// ==============================================================================
+
+interface LoadingSpinnerProps {
+  size?: 'small' | 'large';
+  className?: string;
+  text?: string;
+}
+
+export function LoadingSpinner({ 
+  size = 'large', 
+  className = '',
+  text = 'Carregando...'
+}: LoadingSpinnerProps) {
+  return (
+    <View className={`items-center justify-center ${className}`}>
+      <Text className={`mb-2 ${size === 'large' ? 'text-2xl' : 'text-lg'}`}>
+        ⏳
+      </Text>
+      {text && (
+        <Text className="text-gray-600 text-sm">
+          {text}
+        </Text>
+      )}
     </View>
   );
 }
