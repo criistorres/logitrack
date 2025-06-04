@@ -68,8 +68,8 @@
   - **Validação**: Componentes funcionam, cores aplicadas, tema consistente
 
 #### **🌐 Frontend (Next.js)**
-- [ ] **Setup Next.js + TypeScript**
-  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+- [x] **Setup Next.js + TypeScript**
+  - **Data**: 04/06/2025 | **Status**: ✅ Concluído
   - **Descrição**: Projeto Next.js 14+ com TypeScript, Tailwind CSS, estrutura de pastas organizada
   - **Validação**: `npm run dev` funciona, páginas carregam, TypeScript sem erros
   - **Comandos**:
@@ -78,7 +78,7 @@
     cd frontend && npm install axios @types/axios
     ```
 
-**📊 Progresso Etapa 1.1**: 5/6 itens (83%) | **Status**: 🟨 Quase Completo
+**📊 Progresso Etapa 1.1**: 6/6 itens  | **Status**: ✅ Concluído
 
 ---
 

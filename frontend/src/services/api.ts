@@ -1,17 +1,19 @@
 // src/services/api.ts
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios, { AxiosError, AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosError } from 'axios';
+import Cookies from 'js-cookie';
 
 /**
- * URL base da API
- * Em desenvolvimento aponta para localhost
- * Em produção deve apontar para o servidor real
+ * Configuração da API para comunicação com Django backend
  */
-const DEVELOPMENT_IP = '192.168.0.12'
-const API_BASE_URL = __DEV__ 
-  ? `http://${DEVELOPMENT_IP}:8000/api`  // ← IP da rede local + /api
-  : 'https://api.logitrack.com/api';
+
+// URL base da API - use seu IP de desenvolvimento
+const DEVELOPMENT_IP = '192.168.0.12'; // ⚠️ ALTERE para seu IP real
+const API_BASE_URL = process.env.NODE_ENV === 'development' 
+  ? `http://${DEVELOPMENT_IP}:8000/api`
+  : process.env.NEXT_PUBLIC_API_URL || 'https://api.logitrack.com/api';
+
+console.log('🌐 API Base URL:', API_BASE_URL);
 
 /**
  * Instância configurada do Axios
@@ -31,15 +33,15 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use(
   async (config) => {
     try {
-      // Buscar token do AsyncStorage
-      const token = await AsyncStorage.getItem('@LogiTrack:token');
+      // Buscar token dos cookies
+      const token = Cookies.get('logitrack_token');
       
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
       
       // Log em desenvolvimento
-      if (__DEV__) {
+      if (process.env.NODE_ENV === 'development') {
         console.log('🚀 Request:', {
           url: config.url,
           method: config.method,
@@ -64,7 +66,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // Log em desenvolvimento
-    if (__DEV__) {
+    if (process.env.NODE_ENV === 'development') {
       console.log('✅ Response:', {
         url: response.config.url,
         status: response.status,
@@ -76,7 +78,7 @@ api.interceptors.response.use(
   },
   async (error: AxiosError) => {
     // Log de erro em desenvolvimento
-    if (__DEV__) {
+    if (process.env.NODE_ENV === 'development') {
       console.log('❌ Error:', {
         url: error.config?.url,
         status: error.response?.status,
@@ -87,8 +89,14 @@ api.interceptors.response.use(
     // Tratar erro 401 (não autorizado)
     if (error.response?.status === 401) {
       // Limpar token e redirecionar para login
-      await AsyncStorage.removeItem('@LogiTrack:token');
-      // TODO: Redirecionar para tela de login
+      Cookies.remove('logitrack_token');
+      Cookies.remove('logitrack_refresh_token');
+      Cookies.remove('logitrack_user');
+      
+      // Se estiver no browser, redirecionar
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
     
     return Promise.reject(error);
