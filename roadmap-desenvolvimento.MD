@@ -88,11 +88,11 @@
 
 #### **🌐 Frontend (Next.js)**
 - [ ] **Interface web de login**
-  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Data**: 04/06/2025 | **Status**: ✅ Concluído
   - **Descrição**: Páginas SSR para login, registro admin, reset de senha para logística
   - **Validação**: SSR funciona, autenticação integrada, redirecionamentos corretos
 
-**📊 Progresso Etapa 1.2**: 4/5 itens (80%) | **Status**: 🟨 Quase Completo
+**📊 Progresso Etapa 1.2**: 5/5 itens (100%) | **Status**: ✅ Concluído
 
 ---
 
