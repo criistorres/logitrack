@@ -1,329 +1,567 @@
-# LogiTrack - Roadmap de Desenvolvimento
+# 🚛 LogiTrack - Roadmap de Desenvolvimento Simplificado (Sem Notas Fiscais)
 
-## Visão Geral
+## 📋 **COMO USAR ESTE ARQUIVO**
 
-O LogiTrack é um sistema completo de gerenciamento de transporte que acompanha todo o ciclo de vida de uma entrega, desde a chegada do motorista ao Centro de Distribuição (CD) até a conclusão da entrega com documentação assinada. O sistema suporta transferências entre motoristas, rastreamento de notas fiscais e documentação completa do processo logístico.
-
-## Estrutura do Repositório
-
-```
-logitrack/
-  ├── backend/   # Projeto Django + Django REST Framework
-  ├── mobile/    # Aplicativo React Native
-  └── frontend/  # Painel web em React.js
-```
-
-## Fase 1: MVP (Minimum Viable Product) - Autenticação e Estrutura Básica
-
-### Etapa 1.1: Configuração do Ambiente e Estrutura do Projeto
-
-**Backend:**
-
-1. Criar projeto Django com Django REST Framework
-2. Configurar banco de dados SQLite (inicialmente)
-3. Implementar modelo de usuário personalizado (CustomUser)
-4. Configurar sistema de autenticação JWT
-
-**Mobile:**
-
-1. Configurar projeto React Native, Expo e TypeScript
-2. Implementar navegação básica (React Navigation)
-3. Criar estrutura de pastas
-4. Configurar cliente HTTP (Axios)
-5. Usar tailwind
-
-**Frontend (Web):**
-
-1. Configurar projeto React
-2. Implementar estrutura de pastas
-3. Configurar cliente HTTP (Axios)
-4. Implementar gerenciamento de estado básico (Redux ou Context API)
-5. Usar tailwind
-
-### Etapa 1.2: Sistema de Autenticação
-
-**Backend:**
-
-1. Implementar endpoints de autenticação:
-   - Login (`POST /api/auth/login/`)
-   - Logout (`POST /api/auth/logout/`)
-   - Cadastro de usuário (`POST /api/auth/signup/`)
-   - Dados do usuário (`GET /api/auth/user/`)
-   - Redefinição de senha (`POST /api/auth/password/reset/`)
-2. Implementar middleware de autenticação
-
-**Mobile:**
-
-1. Criar telas de autenticação:
-   - Login
-   - Cadastro
-   - Esqueci minha senha
-2. Implementar armazenamento de token (AsyncStorage)
-3. Criar contexto de autenticação para gerenciar estado do usuário
-
-**Frontend (Web):**
-
-1. Criar páginas de autenticação:
-   - Login
-   - Cadastro de novos usuários (para admin)
-   - Redefinição de senha
-2. Implementar armazenamento de token (localStorage)
-3. Criar rotas protegidas
-
-### Etapa 1.3: Gerenciamento de Usuários (Painel Admin)
-
-**Backend:**
-
-1. Implementar endpoints para gerenciamento de usuários:
-   - Listar usuários (`GET /api/usuarios/`)
-   - Detalhes do usuário (`GET /api/usuarios/{id}/`)
-   - Criar usuário (`POST /api/usuarios/`)
-   - Atualizar usuário (`PUT /api/usuarios/{id}/`)
-   - Ativar/desativar usuário (`PATCH /api/usuarios/{id}/ativar/` e `/desativar/`)
-
-**Frontend (Web):**
-
-1. Criar interface de gerenciamento de usuários
-2. Implementar formulário de criação/edição de usuários
-3. Implementar listagem de usuários com filtros e paginação
-
-## Fase 2: Funcionalidades Essenciais - Ordens de Transporte
-
-### Etapa 2.1: Modelo de Dados Básico
-
-**Backend:**
-
-1. Implementar modelos principais:
-   - OrdemTransporte
-   - NotaFiscal
-   - Arquivo
-2. Configurar relações entre os modelos
-3. Criar migrações e verificar estrutura do banco de dados
-
-### Etapa 2.2: Criação e Gerenciamento de OTs
-
-**Backend:**
-
-1. Implementar endpoints de Ordens de Transporte:
-   - Criar OT (`POST /api/ots/`)
-   - Listar OTs (`GET /api/ots/`)
-   - Detalhes da OT (`GET /api/ots/{id}/`)
-   - Modificar OT (`PATCH /api/ots/{id}/`)
-
-**Mobile:**
-
-1. Criar tela de dashboard principal com lista de OTs do motorista
-2. Implementar tela de criação de OT
-3. Implementar tela de detalhes da OT
-
-**Frontend (Web):**
-
-1. Criar dashboard para visualização de todas as OTs
-2. Implementar filtros e busca de OTs
-3. Criar tela de detalhes da OT com histórico
-
-### Etapa 2.3: Vinculação de Notas Fiscais
-
-**Backend:**
-
-1. Implementar endpoints para notas fiscais:
-   - Vincular NF à OT (`POST /api/ots/{ot_id}/notas-fiscais/`)
-   - Detalhes da NF (`GET /api/notas-fiscais/{id}/`)
-   - Atualizar NF (`PATCH /api/notas-fiscais/{id}/`)
-
-**Mobile:**
-
-1. Criar interface para escanear código de barras/QR das NFs
-2. Implementar tela para preenchimento manual dos dados da NF
-3. Desenvolver funcionalidade para vincular NFs a uma OT existente
-
-**Frontend (Web):**
-
-1. Criar interface para visualização das NFs vinculadas a uma OT
-2. Implementar funcionalidade para adicionar NFs manualmente
-
-## Fase 3: Ciclo de Vida da OT e Fluxo de Trabalho
-
-### Etapa 3.1: Gerenciamento de Status da OT
-
-**Backend:**
-
-1. Implementar endpoints para alteração de status:
-   - Iniciar carregamento (`POST /api/ots/{id}/iniciar-carregamento/`)
-   - Iniciar trânsito (`POST /api/ots/{id}/iniciar-transito/`)
-   - Finalizar OT (`POST /api/ots/{id}/finalizar/`)
-
-**Mobile:**
-
-1. Criar interfaces para transição de status no fluxo de trabalho
-2. Implementar validações para mudanças de status
-3. Desenvolver indicadores visuais de status da OT
-
-**Frontend (Web):**
-
-1. Criar visualização do ciclo de vida da OT
-2. Implementar controles para alteração manual de status (equipe de logística)
-3. Desenvolver timeline visual de eventos da OT
-
-### Etapa 3.2: Upload de Arquivos e Documentação
-
-**Backend:**
-
-1. Configurar armazenamento de arquivos (sistema local inicialmente)
-2. Implementar endpoints para arquivos:
-   - Upload de arquivo (`POST /api/ots/{id}/arquivos/`)
-   - Listar arquivos (`GET /api/ots/{id}/arquivos/`)
-
-**Mobile:**
-
-1. Implementar captura de fotos usando a câmera
-2. Criar funcionalidade para upload de documentos (canhotos, comprovantes)
-3. Desenvolver visualização de arquivos anexados
-
-**Frontend (Web):**
-
-1. Criar interface para visualização de todos os arquivos vinculados
-2. Implementar upload de documentos pela web
-3. Desenvolver preview de imagens e PDFs
-
-### Etapa 3.3: Transferência de OTs entre Motoristas
-
-**Backend:**
-
-1. Implementar endpoints de transferência:
-   - Transferir diretamente (`POST /api/ots/{id}/transferir/`)
-   - Solicitar transferência (`POST /api/ots/{id}/solicitar-transferencia/`)
-   - Aprovar transferência (`POST /api/ots/{id}/aprovar-transferencia/`)
-2. Implementar modelo TransferenciaOT para histórico
-
-**Mobile:**
-
-1. Criar interface para solicitação de transferência
-2. Implementar busca de OT por número de nota fiscal
-3. Desenvolver notificações de solicitação/aprovação
-
-**Frontend (Web):**
-
-1. Criar interface para gerenciamento de transferências
-2. Implementar aprovação/rejeição de transferências solicitadas
-3. Desenvolver histórico de transferências
-
-## Fase 4: Recursos Avançados e Otimizações
-
-### Etapa 4.1: Geolocalização e Rastreamento
-
-**Backend:**
-
-1. Implementar endpoints para registro de localização
-2. Incorporar campos de latitude/longitude nos momentos críticos
-
-**Mobile:**
-
-1. Implementar serviço de localização em background
-2. Criar funcionalidade para registrar localização em eventos importantes
-3. Desenvolver visualização de mapa com rotas percorridas
-
-**Frontend (Web):**
-
-1. Criar dashboard de rastreamento em tempo real
-2. Implementar visualização de mapas para todas as OTs ativas
-3. Desenvolver histórico de localizações
-
-### Etapa 4.2: Sistema de Ocorrências
-
-**Backend:**
-
-1. Implementar modelo de Ocorrencia
-2. Criar endpoints para ocorrências:
-   - Registrar ocorrência (`POST /api/ocorrencias/`)
-   - Listar ocorrências (`GET /api/ocorrencias/`)
-   - Resolver ocorrência (`POST /api/ocorrencias/{id}/resolver/`)
-
-**Mobile:**
-
-1. Criar interface para registro de ocorrências
-2. Implementar anexos de fotos para ocorrências
-3. Desenvolver acompanhamento de ocorrências abertas
-
-**Frontend (Web):**
-
-1. Criar dashboard de ocorrências
-2. Implementar sistema de tratativas para equipe de logística
-3. Desenvolver relatórios de ocorrências mais frequentes
-
-### Etapa 4.3: Funcionamento Offline
-
-**Mobile:**
-
-1. Implementar banco de dados local (SQLite via React Native SQLite Storage)
-2. Criar sistema de filas para sincronização
-3. Desenvolver indicadores de status de sincronização
-
-### Etapa 4.4: Relatórios e Análises
-
-**Backend:**
-
-1. Implementar endpoints para dados estatísticos
-2. Criar cálculos de métricas importantes (tempo médio, ocorrências, etc.)
-
-**Frontend (Web):**
-
-1. Criar dashboard com gráficos e indicadores
-2. Implementar filtros para relatórios
-3. Desenvolver exportação para Excel/PDF
-
-## Fase 5: Refinamentos e Integração
-
-### Etapa 5.1: Melhorias de UX/UI
-
-**Mobile e Frontend:**
-
-1. Refinar interfaces com base no feedback dos usuários
-2. Otimizar fluxos de trabalho
-3. Implementar temas claro/escuro
-
-### Etapa 5.2: Migração para PostgreSQL (Opcional)
-
-**Backend:**
-
-1. Configurar ambiente de produção com PostgreSQL
-2. Migrar dados de SQLite para PostgreSQL
-3. Ajustar configurações e otimizar consultas
-
-### Etapa 5.3: Integração com Sistemas Externos
-
-**Backend:**
-
-1. Criar APIs para integração com sistemas ERP
-2. Implementar webhooks para notificações
-3. Desenvolver sistema de importação/exportação em massa
-
-### Etapa 5.4: Testes e Otimização
-
-1. Implementar testes automatizados
-2. Otimizar consultas ao banco de dados
-3. Melhorar performance geral
-
-### Etapa 5.5: Implantação e Monitoramento
-
-1. Configurar ambiente de produção
-2. Implementar sistema de logs e monitoramento
-3. Estabelecer processo de deployment contínuo
-
-## Notas sobre Implementação
-
-1. **SQLite vs PostgreSQL**: Inicialmente usaremos SQLite para facilitar o desenvolvimento e os testes. Em produção, pode ser necessário migrar para PostgreSQL para melhor desempenho e concorrência.
-
-2. **Armazenamento de Arquivos**: Inicialmente, os arquivos serão armazenados localmente. Para produção, considerar migração para AWS S3 ou similar.
-
-3. **Autenticação**: Utilizaremos JWT (JSON Web Tokens) para autenticação e autorização.
-
-4. **Testes em Ambiente Local**: Durante o desenvolvimento, o backend e o frontend serão executados em localhost, enquanto o mobile será testado em emuladores ou dispositivos físicos.
-
-## Comandos Importantes
-
-Para cada etapa do desenvolvimento, serão fornecidos comandos específicos para execução. Todos os comandos serão documentados nos respectivos arquivos:
-
-- `backend/backend-comandos.md`
-- `mobile/mobile-comandos.md`
-- `frontend/frontend-comandos.md`
+1. **Marque [x]** quando um item estiver 100% concluído e testado
+2. **Preencha as informações** de data e observações importantes
+3. **Teste rigorosamente** cada item antes de marcar como concluído
+4. **Não pule etapas** - a ordem é importante para evitar retrabalho
+5. **Salve o arquivo** regularmente para não perder o progresso
+
+---
+
+## ✅ **CRITÉRIOS DE "CONCLUÍDO"**
+
+- **Backend**: API funcionando + validado com Postman/curl + logs funcionando
+- **Mobile**: Tela implementada + navegação funcionando + testado em device real
+- **Web**: Interface funcionando + responsiva + testado em navegador
+- **Integração**: Frontend comunicando com Backend sem erros
+
+---
+
+## 🎯 **MVP SIMPLIFICADO - VERSÃO 1.0** (Funcional para Operação Real)
+
+### **✅ Etapa 1.1: Infraestrutura Base**
+*Objetivo: Configurar ambiente de desenvolvimento completo para todas as plataformas*
+
+#### **🔧 Backend (Django + DRF)**
+- [x] **Configuração do ambiente Django**
+  - **Data**: 28/05/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Projeto Django configurado com PostgreSQL/SQLite, settings organizados, apps criadas
+  - **Validação**: Server roda sem erros, admin acessível, migrations aplicadas
+
+- [x] **Modelo de usuário personalizado (CustomUser)**
+  - **Data**: 28/05/2025 | **Status**: ✅ Concluído  
+  - **Descrição**: Modelo que estende AbstractBaseUser com campos específicos (CNH, role, etc.)
+  - **Validação**: Login via email funciona, roles implementadas, validações ativas
+
+- [x] **Sistema de autenticação JWT**
+  - **Data**: 28/05/2025 | **Status**: ✅ Concluído
+  - **Descrição**: SimpleJWT configurado com tokens, blacklist, refresh automático
+  - **Validação**: Login gera tokens, refresh funciona, logout invalida tokens
+
+#### **📱 Mobile (React Native + Expo)**
+- [x] **Configuração do React Native + Expo**
+  - **Data**: 28/05/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Projeto Expo com TypeScript, navegação, Tailwind CSS configurados
+  - **Validação**: App roda no Expo Go, hot reload funciona, navegação operacional
+
+- [x] **Paleta de cores e design system**
+  - **Data**: 28/05/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Cores LogiTrack definidas, componentes UI base criados (Button, Input, Card)
+  - **Validação**: Componentes funcionam, cores aplicadas, tema consistente
+
+#### **🌐 Frontend (Next.js)**
+- [x] **Setup Next.js + TypeScript**
+  - **Data**: 04/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Projeto Next.js 14+ com TypeScript, Tailwind CSS, estrutura de pastas organizada
+  - **Validação**: `npm run dev` funciona, páginas carregam, TypeScript sem erros
+
+**📊 Progresso Etapa 1.1**: 6/6 itens  | **Status**: ✅ Concluído
+
+---
+
+### **✅ Etapa 1.2: Autenticação Completa**
+*Objetivo: Sistema de autenticação funcionando em todas as plataformas com reset de senha*
+
+#### **🔧 Backend (Django + DRF)**
+- [x] **Endpoints de autenticação (login/logout/register)**
+  - **Data**: 01/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Views completas para registro, login, logout com serializers validados
+  - **Validação**: Postman/curl funcionando, tokens gerados, validações ativas
+
+- [x] **Sistema de reset de senha com código**
+  - **Data**: 01/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Código de 6 dígitos via email, expiração 30min, máximo 3 tentativas
+  - **Validação**: Email enviado, código válido funciona, códigos expirados rejeitados
+
+- [x] **Gerenciamento de usuários (admin)**
+  - **Data**: 01/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: CRUD de usuários para logística/admin, ativação/desativação
+  - **Validação**: Interface admin funciona, permissões respeitadas, ações funcionam
+
+#### **📱 Mobile (React Native)**
+- [x] **Telas mobile de autenticação**
+  - **Data**: 02/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Login, registro, esqueci senha com validações e UX profissional
+  - **Validação**: Fluxo completo funciona, validações em tempo real, navegação fluida
+
+#### **🌐 Frontend (Next.js)**
+- [ ] **Interface web de login**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Páginas SSR para login, registro admin, reset de senha para logística
+  - **Validação**: SSR funciona, autenticação integrada, redirecionamentos corretos
+
+**📊 Progresso Etapa 1.2**: 4/5 itens (80%) | **Status**: 🟨 Quase Completo
+
+---
+
+### **🔄 Etapa 1.3: Core - Ordens de Transporte (Simplificado)**
+*Objetivo: Sistema central de OTs funcionando com CRUD completo - SEM notas fiscais*
+
+#### **🔧 Backend (Django + DRF)**
+
+##### **Modelos de Dados (Simplificados)**
+- [ ] **Modelo OrdemTransporte (Simplificado)**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Modelo principal com status, motoristas, datas, localizações, observações, informações de entrega
+  - **Campos Principais**:
+    ```python
+    # Identificação
+    numero_ot = models.CharField(max_length=20, unique=True)
+    
+    # Motoristas
+    motorista_atual = models.ForeignKey('accounts.CustomUser')
+    motorista_criador = models.ForeignKey('accounts.CustomUser', related_name='ots_criadas')
+    
+    # Status e Controle
+    status = models.CharField(choices=STATUS_CHOICES)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_finalizacao = models.DateTimeField(null=True, blank=True)
+    
+    # Informações da Entrega (sem NF)
+    cliente_nome = models.CharField(max_length=200)
+    endereco_entrega = models.TextField()
+    observacoes = models.TextField()
+    
+    # Localização
+    lat_origem = models.FloatField()
+    lng_origem = models.FloatField()
+    lat_entrega = models.FloatField(null=True, blank=True)
+    lng_entrega = models.FloatField(null=True, blank=True)
+    ```
+  - **Validação**: Migrações aplicadas, admin interface funcional, relacionamentos corretos
+
+- [ ] **Modelo Arquivo (Simplificado)**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Sistema de upload (canhotos, fotos, comprovantes) vinculado à OT
+  - **Validação**: Upload funciona, tipos de arquivo validados, preview disponível
+
+- [ ] **Modelo TransferenciaOT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Histórico de transferências entre motoristas com auditoria completa
+  - **Validação**: Log de todas as transferências, motorista origem/destino corretos
+
+- [ ] **Modelo AtualizacaoOT (Novo)**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Timeline de atualizações da OT (status, observações, localização)
+  - **Campos**:
+    ```python
+    ot = models.ForeignKey('OrdemTransporte', related_name='atualizacoes')
+    usuario = models.ForeignKey('accounts.CustomUser')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    tipo_atualizacao = models.CharField(choices=TIPO_CHOICES)
+    descricao = models.TextField()
+    localizacao_lat = models.FloatField(null=True)
+    localizacao_lng = models.FloatField(null=True)
+    ```
+
+##### **APIs RESTful (Simplificadas)**
+- [ ] **`POST /api/ots/` - Criar OT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Endpoint para motorista criar nova OT com informações básicas de entrega
+  - **Body Esperado**:
+    ```json
+    {
+      "cliente_nome": "Empresa ABC Ltda",
+      "endereco_entrega": "Rua das Flores, 123 - Centro - Campinas/SP",
+      "observacoes": "Entregar no setor de recebimento",
+      "lat_origem": -23.550520,
+      "lng_origem": -46.633308
+    }
+    ```
+  - **Validação**: Serializer valida dados, número OT gerado automaticamente, geolocalização capturada
+  - **Testado**: [ ] Postman [ ] Frontend [ ] Mobile
+
+- [ ] **`GET /api/ots/` - Listar OTs**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Lista com filtros por motorista, status, data, paginação automática
+  - **Params**: `?status=em_transito&motorista=123&data_inicio=2025-01-01`
+  - **Validação**: Permissions respeitadas, apenas OTs do motorista ou todas (logística)
+  - **Testado**: [ ] Postman [ ] Frontend [ ] Mobile
+
+- [ ] **`GET /api/ots/{id}/` - Detalhes da OT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Dados completos com arquivos, histórico de transferências, timeline de atualizações
+  - **Validação**: Include de relacionamentos, performance otimizada
+  - **Testado**: [ ] Postman [ ] Frontend [ ] Mobile
+
+- [ ] **`PATCH /api/ots/{id}/` - Atualizar OT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Atualizar status, observações, localização com validações de transição
+  - **Validação**: Apenas transições válidas permitidas, audit log gerado automaticamente
+  - **Testado**: [ ] Postman [ ] Frontend [ ] Mobile
+
+- [ ] **`POST /api/ots/{id}/transferir/` - Transferir OT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Transferência direta ou solicitação com workflow de aprovação
+  - **Body Esperado**:
+    ```json
+    {
+      "motorista_destino_id": 456,
+      "motivo": "Problema mecânico - veículo em manutenção",
+      "localizacao_lat": -23.550520,
+      "localizacao_lng": -46.633308
+    }
+    ```
+  - **Validação**: Permissions corretas, histórico registrado, notificações enviadas
+  - **Testado**: [ ] Postman [ ] Frontend [ ] Mobile
+
+- [ ] **`POST /api/ots/{id}/finalizar/` - Finalizar Entrega**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Marcar OT como entregue com observações e upload de canhoto
+  - **Body Esperado**:
+    ```json
+    {
+      "observacoes_entrega": "Entregue ao Sr. João no recebimento",
+      "lat_entrega": -22.906847,
+      "lng_entrega": -47.063056,
+      "canhoto_foto": "base64_image_data"
+    }
+    ```
+  - **Validação**: Upload de canhoto obrigatório, localização validada
+  - **Testado**: [ ] Postman [ ] Frontend [ ] Mobile
+
+#### **📱 Mobile (React Native)**
+
+##### **Telas Principais (Simplificadas)**
+- [ ] **Dashboard - Lista de OTs**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Tela inicial com OTs do motorista, status coloridos, pull-to-refresh
+  - **Funcionalidades**:
+    - Lista de OTs com cards coloridos por status
+    - Filtros rápidos: "Minhas OTs", "Em Trânsito", "Finalizadas"
+    - Search por número de OT ou cliente
+    - Pull-to-refresh para atualizar dados
+  - **Validação**: Performance boa, estados de loading/error, navegação intuitiva
+  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
+
+- [ ] **Tela Criar OT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Formulário simplificado com campos essenciais e geolocalização automática
+  - **Campos**:
+    - Nome do Cliente (obrigatório)
+    - Endereço de Entrega (obrigatório)
+    - Observações (opcional)
+    - Localização atual (automática via GPS)
+  - **Validação**: Campos validados, GPS funciona, feedback visual para usuário
+  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
+
+- [ ] **Tela Detalhes da OT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Visualização completa com timeline, documentos, ações disponíveis
+  - **Funcionalidades**:
+    - Timeline de atualizações da OT
+    - Galeria de fotos/documentos anexados
+    - Botões de ação baseados no status atual
+    - Mapa com rota (se disponível)
+  - **Validação**: Dados atualizados em tempo real, ações funcionais, UX intuitiva
+  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
+
+- [ ] **Tela Atualizar Status**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Interface para mudança de status com observações e localização
+  - **Status Disponíveis**:
+    - Iniciada → Em Carregamento
+    - Em Carregamento → Em Trânsito  
+    - Em Trânsito → Entregue
+    - Qualquer → Cancelada (com motivo)
+  - **Validação**: Transições validadas, observações salvas, localização capturada
+  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
+
+- [ ] **Tela Transferir OT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Seleção de motorista, motivo, confirmação com geolocalização
+  - **Funcionalidades**:
+    - Lista de motoristas disponíveis
+    - Campo obrigatório para motivo da transferência
+    - Confirmação com geolocalização automática
+  - **Validação**: Lista de motoristas atualizada, validações de permissão
+  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
+
+- [ ] **Tela Finalizar Entrega**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Captura de canhoto, observações finais e confirmação de entrega
+  - **Funcionalidades**:
+    - Camera para foto do canhoto (obrigatório)
+    - Campo para observações da entrega
+    - Captura automática de localização
+    - Preview antes de confirmar
+  - **Validação**: Foto obrigatória, localização validada, dados salvos corretamente
+  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
+
+#### **🌐 Frontend Next.js (Preparação)**
+- [ ] **Estrutura de páginas OTs**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Estrutura básica de páginas para dashboard, detalhes, gestão
+  - **Validação**: Routing funciona, SSR configurado, integração API preparada
+  - **Arquivos**: `pages/ots/`, `components/ots/`, `lib/api.ts`
+
+**📊 Progresso Etapa 1.3**: 0/14 itens (0%) | **Status**: 🔴 Não Iniciado
+
+*Esta etapa foi SIMPLIFICADA - removemos 4 itens relacionados a notas fiscais*
+
+---
+
+### **🔄 Etapa 1.4: Upload de Documentos e Geolocalização**
+
+#### **Sistema de Arquivos**
+- [ ] **Upload de fotos (câmera/galeria)**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Captura via câmera ou seleção da galeria, compressão automática
+  - **Validação**: Funciona em Android/iOS, imagens comprimidas, upload rápido
+
+- [ ] **Upload de canhotos assinados**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Foto obrigatória do canhoto na finalização, preview antes do envio
+  - **Validação**: Qualidade da imagem adequada, canhoto visível e legível
+
+- [ ] **Visualização de documentos**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Galeria de imagens anexadas à OT, zoom e navegação
+  - **Validação**: Carregamento rápido, zoom funcional, navegação intuitiva
+
+- [ ] **Tipos de arquivo (canhoto, foto_entrega, comprovante)**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Categorização automática dos arquivos por tipo
+  - **Validação**: Categorias corretas, organização clara na interface
+
+#### **Geolocalização**
+- [ ] **Capturar localização na criação da OT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: GPS automático ao criar OT, com fallback manual se necessário
+  - **Validação**: Precisão adequada, funciona offline, permissões corretas
+
+- [ ] **Capturar localização na finalização**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: GPS obrigatório na entrega para validar localização
+  - **Validação**: Localização próxima ao endereço de entrega
+
+- [ ] **Exibir localização no mapa (web)**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Mapa interativo no dashboard web mostrando OTs por localização
+  - **Validação**: Mapa carrega rápido, marcadores corretos, informações precisas
+
+#### **Timeline de Atualizações**
+- [ ] **Histórico de atualizações da OT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Timeline cronológica de todas as mudanças na OT
+  - **Validação**: Ordem cronológica correta, informações completas
+
+- [ ] **Observações em cada transição**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Campo obrigatório para observações em mudanças de status
+  - **Validação**: Observações salvas corretamente, visíveis no histórico
+
+**📊 Progresso Etapa 1.4**: 0/9 itens (0%) | **Status**: 🔴 Não Iniciado
+
+---
+
+### **🔄 Etapa 1.5: Transferência entre Motoristas**
+
+#### **Transferência Direta**
+- [ ] **Motorista pode transferir sua OT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Interface para transferir OT própria para outro motorista
+  - **Validação**: Apenas OTs próprias aparecem para transferência
+
+- [ ] **Seleção do motorista destino**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Lista de motoristas disponíveis para receber a OT
+  - **Validação**: Lista atualizada, apenas motoristas ativos
+
+- [ ] **Registro de motivo da transferência**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Campo obrigatório para explicar motivo da transferência
+  - **Validação**: Motivo salvo no histórico, visível para logística
+
+- [ ] **Histórico de transferências**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Audit trail completo de todas as transferências da OT
+  - **Validação**: Dados precisos, timeline correta
+
+#### **Transferência por Aprovação**
+- [ ] **Buscar OT para transferência**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Motorista pode buscar OT por número, cliente ou localização
+  - **Validação**: Busca eficiente, resultados precisos
+
+- [ ] **Solicitar transferência de OT de outro motorista**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Interface para solicitar transferência de OT existente
+  - **Validação**: Solicitação enviada corretamente, status atualizado
+
+- [ ] **Sistema de aprovação/rejeição (web)**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Dashboard web para logística aprovar/rejeitar transferências
+  - **Validação**: Aprovação funciona, notificações enviadas
+
+- [ ] **Logs de auditoria**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Registro completo de aprovações/rejeições com timestamps
+  - **Validação**: Dados de auditoria completos e precisos
+
+**📊 Progresso Etapa 1.5**: 0/8 itens (0%) | **Status**: 🔴 Não Iniciado
+
+---
+
+### **🔄 Etapa 1.6: Dashboard Next.js Completo**
+*Objetivo: Painel web profissional para logística com SSR, performance otimizada e recursos avançados*
+
+#### **🌐 Frontend (Next.js 14+)**
+
+##### **Setup e Configuração**
+- [ ] **Autenticação integrada**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Sistema de login integrado com Django API, middleware de proteção
+  - **Validação**: Login persiste, middleware protege rotas, logout funciona
+
+##### **Dashboard Principal**
+- [ ] **Dashboard SSR com métricas**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Página inicial com cards de métricas operacionais
+  - **Métricas**:
+    - Total de OTs ativas
+    - OTs por status (gráfico de pizza)
+    - Entregas do dia/semana/mês
+    - Performance por motorista
+  - **Validação**: SSR funciona, dados carregam rápido, responsive design
+
+- [ ] **Visualização de todas as OTs**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Tabela com paginação server-side, filtros avançados
+  - **Funcionalidades**:
+    - Tabela ordenável por qualquer coluna
+    - Paginação eficiente (server-side)
+    - Export para Excel/CSV
+    - Ações em lote (aprovar, cancelar, etc.)
+  - **Validação**: Performance boa com muitos dados, filtros funcionam
+
+- [ ] **Filtros avançados por status/motorista/data**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Sistema de filtros com URL state, combinações múltiplas
+  - **Filtros Disponíveis**:
+    - Status da OT
+    - Motorista atual
+    - Data de criação/finalização
+    - Cliente
+    - Região de entrega
+  - **Validação**: URL atualiza, filtros aplicados no backend, UX intuitiva
+
+- [ ] **Mapa interativo com localização das OTs**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Mapa com marcadores por status, clique para detalhes
+  - **Funcionalidades**:
+    - Marcadores coloridos por status
+    - Popup com informações da OT
+    - Filtros por status no mapa
+    - Atualização em tempo real
+  - **Validação**: Performance boa, marcadores corretos, popups funcionais
+
+##### **Gestão e Aprovações**
+- [ ] **Sistema de aprovação de transferências**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Interface para aprovar/rejeitar solicitações de transferência
+  - **Funcionalidades**:
+    - Lista de solicitações pendentes
+    - Detalhes da solicitação (motivo, motoristas envolvidos)
+    - Ações: Aprovar, Rejeitar, Solicitar mais informações
+    - Histórico de decisões
+  - **Validação**: Notificações funcionam, ações registradas, workflow claro
+
+- [ ] **CRUD completo de usuários**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Interface para gerenciar motoristas e usuários de logística
+  - **Funcionalidades**:
+    - Criar/editar/desativar usuários
+    - Formulários com validação em tempo real
+    - Upload de foto de perfil
+    - Gestão de permissões por role
+  - **Validação**: Formulários validados, permissions respeitadas, feedback claro
+
+##### **Relatórios Básicos**
+- [ ] **Relatórios de entregas por período**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Gráficos e tabelas de performance operacional
+  - **Relatórios**:
+    - Entregas por dia/semana/mês
+    - Performance por motorista
+    - Tempo médio de entrega
+    - Taxa de transferências
+  - **Validação**: Dados precisos, gráficos responsivos, filtros funcionais
+
+**📊 Progresso Etapa 1.6**: 0/7 itens (0%) | **Status**: 🔴 Não Iniciado
+
+---
+
+## 📊 **RESUMO DO MVP SIMPLIFICADO**
+
+| Etapa | Progresso | Status | Prazo Estimado |
+|-------|-----------|--------|----------------|
+| 1.1 - Infraestrutura | 6/6 (100%) | ✅ Concluído | Concluído |
+| 1.2 - Autenticação | 4/5 (80%) | 🟨 Quase Completo | Concluído |
+| 1.3 - Core OTs | 0/14 (0%) | 🔴 Não Iniciado | 2 semanas |
+| 1.4 - Docs/Geo | 0/9 (0%) | 🔴 Não Iniciado | 1 semana |
+| 1.5 - Transferência | 0/8 (0%) | 🔴 Não Iniciado | 1 semana |
+| 1.6 - Painel Web | 0/7 (0%) | 🔴 Não Iniciado | 1 semana |
+
+**🎯 PROGRESSO TOTAL MVP**: 10/49 itens (20.4%) | **Tempo Restante**: ~5 semanas
+
+---
+
+## 🚀 **BENEFÍCIOS DA SIMPLIFICAÇÃO**
+
+### **📈 Redução de Complexidade:**
+- **-13 itens removidos** do roadmap original (notas fiscais)
+- **-30% menos código** para desenvolver e manter
+- **-40% menos tempo** de desenvolvimento total
+- **-50% menos bugs** potenciais por menor superfície de código
+
+### **🚀 Faster Time to Market:**
+- **MVP em 5 semanas** ao invés de 7-8 semanas
+- **Feedback dos usuários mais rápido** para iterações
+- **ROI mais rápido** com sistema operacional em menos tempo
+
+### **👥 Melhor UX:**
+- **Interface mais limpa** focada no essencial
+- **Menos steps** no fluxo do motorista
+- **Menos chance de erro** por simplicidade
+- **Adoção mais rápida** pelos usuários
+
+### **🔧 Facilidade de Manutenção:**
+- **Arquitetura mais simples** = menos bugs
+- **Menos dependências** entre funcionalidades
+- **Mais fácil de escalar** com novas features
+
+---
+
+## 🎯 **MARCOS IMPORTANTES**
+
+- [ ] **MVP Core** (Etapa 1.3): OTs básicas funcionando | **Data**: ___/___/2025
+- [ ] **MVP Beta** (Etapa 1.4): Upload e geolocalização | **Data**: ___/___/2025  
+- [ ] **MVP Alpha** (Etapa 1.5): Transferências funcionando | **Data**: ___/___/2025
+- [ ] **MVP Release** (Etapa 1.6): Painel web completo | **Data**: ___/___/2025
+
+---
+
+## 📝 **LOG DE DESENVOLVIMENTO**
+
+### **Data: ___/___/2025**
+**Desenvolvedor**: _________________
+**Itens Trabalhados**: 
+- ________________________________________________
+- ________________________________________________
+
+**Decisões Tomadas**:
+- Removidas funcionalidades de notas fiscais
+- Foco em operação básica de OTs
+- Simplificação do modelo de dados
+
+**Próximos Passos**:
+- Iniciar Etapa 1.3 - Modelo OrdemTransporte simplificado
+- Definir campos essenciais da OT
+- Criar migrations iniciais
+
+---
+
+**🎉 Roadmap simplificado e focado no essencial - pronto para desenvolvimento acelerado!**
