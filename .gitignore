@@ -177,3 +177,5 @@ backend/.vscode/settings.json
 backend/.vscode/launch.json
 backend/test_email.py
 .vscode/settings.json
+backend/accounts/migrations/0001_initial.py
+backend/accounts/migrations/0002_alter_customuser_cpf_alter_customuser_phone.py

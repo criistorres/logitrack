@@ -58,12 +58,12 @@ Content-Type: application/json
 
 
 {
-    "email": "jose@email.com",
+    "email": "maria@email.com",
     "password": "Laura@2024", 
     "password_confirm": "Laura@2024", 
-    "first_name": "Jose", 
+    "first_name": "Maria", 
     "last_name": "Silva", 
-    "cpf": "354.953.588-87", 
+    "cpf": "314.953.588-87", 
     "phone": "(11) 99953-2631", 
     "role": "motorista", 
     "cnh_numero": "123456097", 

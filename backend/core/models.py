@@ -357,6 +357,11 @@ class OrdemTransporte(models.Model):
         """
         Transfere a OT para outro motorista.
         
+        🆕 NOVA LÓGICA COM ACEITAÇÃO:
+        - Motorista atual → AGUARDANDO_ACEITACAO (motorista destino deve aceitar)
+        - Outro motorista → PENDENTE (logística deve aprovar)
+        - Logística/Admin → APROVADA (aprovação direta)
+        
         Args:
             novo_motorista: Motorista que receberá a OT
             usuario_solicitante: Usuário que está solicitando a transferência
@@ -368,20 +373,55 @@ class OrdemTransporte(models.Model):
         if not self.pode_ser_transferida:
             raise ValidationError('Esta OT não pode ser transferida no status atual')
         
+        # Determinar status inicial baseado em quem está transferindo
+        if usuario_solicitante.role in ['logistica', 'admin']:
+            # Logística/Admin podem transferir diretamente
+            print(f"🔄 Transferência por logística/admin - aprovação automática")
+            status_inicial = 'APROVADA'
+            aprovado_por = usuario_solicitante
+            data_resposta = timezone.now()
+            
+        elif usuario_solicitante == self.motorista_atual:
+            # Motorista atual transfere - aguarda aceitação do destino
+            print(f"🔄 Transferência direta - aguardando aceitação do motorista destino")
+            status_inicial = 'AGUARDANDO_ACEITACAO'
+            aprovado_por = None
+            data_resposta = None
+            
+        else:
+            # Outro motorista solicita - aguarda aprovação da logística
+            print(f"🔄 Solicitação de transferência - aguarda aprovação da logística")
+            status_inicial = 'PENDENTE'
+            aprovado_por = None
+            data_resposta = None
+        
         # Criar registro de transferência
         transferencia = TransferenciaOT.objects.create(
             ordem_transporte=self,
             motorista_origem=self.motorista_atual,
             motorista_destino=novo_motorista,
             solicitado_por=usuario_solicitante,
+            aprovado_por=aprovado_por,
             motivo=motivo,
-            status='PENDENTE' if usuario_solicitante != self.motorista_atual else 'APROVADA'
+            status=status_inicial,
+            data_resposta=data_resposta
         )
         
-        # Se for transferência direta (motorista transferindo sua própria OT)
-        if usuario_solicitante == self.motorista_atual:
-            transferencia.aprovar(usuario_solicitante)
+        # Se for aprovação automática (logística/admin), atualizar OT imediatamente
+        if status_inicial == 'APROVADA':
+            self.motorista_atual = novo_motorista
+            self.save(update_fields=['motorista_atual'])
+            
+            # Criar registro de atualização
+            AtualizacaoOT.objects.create(
+                ordem_transporte=self,
+                usuario=usuario_solicitante,
+                tipo_atualizacao='TRANSFERENCIA',
+                descricao=f'OT transferida de {transferencia.motorista_origem.full_name} para {transferencia.motorista_destino.full_name}',
+                observacao=f'{motivo} (Aprovada automaticamente por {usuario_solicitante.role})'
+            )
         
+        print(f"✅ Transferência criada com status: {status_inicial}")
         return transferencia
     
     def adicionar_arquivo(self, arquivo, tipo, usuario, descricao=''):

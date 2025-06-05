@@ -61,6 +61,8 @@ urlpatterns = [
     
     # URLs de autenticação
     path('api/auth/', include('accounts.urls')),
+        # URLs de Ordens de Transporte
+    path('api/ots/', include('core.urls')),  
     
     # Futuras URLs (implementar nas próximas etapas)
     # path('api/ots/', include('core.urls')),  # Ordens de Transporte
