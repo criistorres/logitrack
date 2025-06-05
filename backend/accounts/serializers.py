@@ -90,6 +90,50 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'last_name': {'required': True},
         }
 
+    def to_internal_value(self, data):
+        """
+        🔧 LIMPEZA DE DADOS ANTES DAS VALIDAÇÕES
+        
+        Este método é chamado PRIMEIRO, antes de qualquer validação.
+        Aqui limpamos os dados para que passem pelas validações de campo.
+        
+        🎯 PROPÓSITO:
+        - Limpar CPF: "354.953.588-87" → "35495358887"
+        - Limpar telefone: "(11) 99953-2631" → "11999532631"
+        - Normalizar email: "JOSE@EMAIL.COM" → "jose@email.com"
+        """
+        print(f"🔧 TO_INTERNAL_VALUE: Limpando dados antes das validações")
+        print(f"🔧 Dados originais: {data}")
+        
+        # Fazer cópia dos dados para não modificar o original
+        cleaned_data = data.copy() if hasattr(data, 'copy') else dict(data)
+        
+        # 1. Limpar CPF (remover pontos, traços e espaços)
+        if 'cpf' in cleaned_data and cleaned_data['cpf']:
+            cpf_original = cleaned_data['cpf']
+            cpf_limpo = ''.join(filter(str.isdigit, cpf_original))
+            cleaned_data['cpf'] = cpf_limpo
+            print(f"🔧 CPF: '{cpf_original}' → '{cpf_limpo}'")
+        
+        # 2. Limpar telefone (remover parênteses, traços, espaços)
+        if 'phone' in cleaned_data and cleaned_data['phone']:
+            phone_original = cleaned_data['phone']
+            phone_limpo = ''.join(filter(str.isdigit, phone_original))
+            cleaned_data['phone'] = phone_limpo
+            print(f"🔧 Telefone: '{phone_original}' → '{phone_limpo}'")
+        
+        # 3. Normalizar email (minúsculo e remover espaços)
+        if 'email' in cleaned_data and cleaned_data['email']:
+            email_original = cleaned_data['email']
+            email_limpo = email_original.strip().lower()
+            cleaned_data['email'] = email_limpo
+            print(f"🔧 Email: '{email_original}' → '{email_limpo}'")
+        
+        print(f"🔧 Dados após limpeza: {cleaned_data}")
+        
+        # Chamar o método pai com dados limpos
+        return super().to_internal_value(cleaned_data)
+
     # 🔍 MÉTODO 1: Validação individual do email
     def validate_email(self, value):
         """

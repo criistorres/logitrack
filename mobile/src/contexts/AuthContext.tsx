@@ -120,7 +120,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // ==============================================================================
   // 🔄 VERIFICAR STATUS DE AUTENTICAÇÃO NO INÍCIO
   // ==============================================================================
-  const DEVELOPMENT_IP = '192.168.0.12'
+  const DEVELOPMENT_IP = '192.168.0.2'
   useEffect(() => {
     checkAuthStatus();
   }, []);

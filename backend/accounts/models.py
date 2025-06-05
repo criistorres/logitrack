@@ -160,33 +160,34 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
     
     # Validador para CPF (apenas números, 11 dígitos)
-    cpf_validator = RegexValidator(
-        regex=r'^\d{11}$',
-        message='CPF deve conter exatamente 11 dígitos numéricos.'
-    )
+    # cpf_validator = RegexValidator(
+    #     regex=r'^\d{11}$',
+    #     message='CPF deve conter exatamente 11 dígitos numéricos.'
+    # )
     
     cpf = models.CharField(
         'CPF',
         max_length=11,
         unique=True,
-        validators=[cpf_validator],
+        # validators=[cpf_validator],
         help_text='CPF com 11 dígitos (apenas números)',
         error_messages={
             'unique': 'Um usuário com este CPF já existe.',
         }
     )
     
+    
     # Validador para telefone
-    phone_validator = RegexValidator(
-        regex=r'^\+?1?\d{10,15}$',
-        message='Telefone deve ter entre 10 e 15 dígitos.'
-    )
+    # phone_validator = RegexValidator(
+    #     regex=r'^\+?1?\d{10,15}$',
+    #     message='Telefone deve ter entre 10 e 15 dígitos.'
+    # )
     
     phone = models.CharField(
         'Telefone',
         max_length=15,
         blank=True,
-        validators=[phone_validator],
+        # validators=[phone_validator],
         help_text='Número de telefone com DDD'
     )
     

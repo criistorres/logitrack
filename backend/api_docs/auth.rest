@@ -56,17 +56,18 @@ Content-Type: application/json
 POST {{authURL}}/register/
 Content-Type: application/json
 
+
 {
-    "email": "motorista1@teste.com",
-    "password": "senha123456",
-    "password_confirm": "senha123456",
-    "first_name": "João",
-    "last_name": "Silva",
-    "cpf": "12345678901",
-    "phone": "11999999999",
-    "role": "motorista",
-    "cnh_numero": "12345678901",
-    "cnh_categoria": "B",
+    "email": "jose@email.com",
+    "password": "Laura@2024", 
+    "password_confirm": "Laura@2024", 
+    "first_name": "Jose", 
+    "last_name": "Silva", 
+    "cpf": "354.953.588-87", 
+    "phone": "(11) 99953-2631", 
+    "role": "motorista", 
+    "cnh_numero": "123456097", 
+    "cnh_categoria": "B", 
     "cnh_validade": "2025-12-31"
 }
 

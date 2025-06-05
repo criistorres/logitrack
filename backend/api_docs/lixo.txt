@@ -1,0 +1,284 @@
+# ==============================================================================
+# 📝 VIEW DE REGISTRO - EXPLICAÇÃO PASSO A PASSO
+# ==============================================================================
+
+class RegisterView(APIView):
+    """
+    🎯 PROPÓSITO: Registrar novos usuários
+    
+    📋 FLUXO DESTA VIEW:
+    1. Recebe dados JSON no request.data
+    2. Cria UserRegistrationSerializer com esses dados
+    3. Chama is_valid() → dispara validates do serializer
+    4. Se válido, chama save() → dispara create() do serializer
+    5. Gera tokens JWT
+    6. Retorna resposta com dados do usuário e tokens
+    
+    🐛 DEBUGGING STEP-BY-STEP:
+    1. Coloque breakpoint na linha: print("🎯 REGISTER VIEW: Iniciando registro")
+    2. Coloque breakpoint na linha: serializer = UserRegistrationSerializer(data=request.data)
+    3. Coloque breakpoint na linha: if serializer.is_valid():
+    4. Faça requisição POST para /api/auth/register/
+    5. Siga o fluxo passo a passo
+    """
+    
+    permission_classes = [permissions.AllowAny]  # Qualquer um pode se registrar
+
+    def post(self, request):
+        """
+        Endpoint: POST /api/auth/register/
+        
+        Body JSON esperado:
+        {
+            "email": "usuario@example.com",
+            "password": "minhasenha123",
+            "password_confirm": "minhasenha123",
+            "first_name": "João",
+            "last_name": "Silva",
+            "cpf": "12345678901",
+            "phone": "11999999999",
+            "role": "motorista"
+        }
+        """
+        
+        # 🐛 BREAKPOINT 1: Início da view
+        print("🎯 REGISTER VIEW: Iniciando registro")
+        print(f"🎯 Dados recebidos: {request.data}")
+        print(f"🎯 Método HTTP: {request.method}")
+        print(f"🎯 Content-Type: {request.content_type}")
+        
+        logger.info(f"Tentativa de registro para: {request.data.get('email')}")
+        
+        # 🐛 BREAKPOINT 2: Criação do serializer
+        print("🎯 Criando UserRegistrationSerializer...")
+        serializer = UserRegistrationSerializer(data=request.data)
+        
+        # Debug do estado inicial do serializer
+        debug_serializer_flow(serializer, "Serializer recém-criado")
+        
+        # 🐛 BREAKPOINT 3: Validação (AQUI ENTRA NOS MÉTODOS VALIDATE DO SERIALIZER!)
+        print("🎯 Chamando serializer.is_valid()...")
+        print("   ↳ Isso vai chamar os métodos validate_* do serializer")
+        
+        if serializer.is_valid():
+            print("✅ Dados válidos! Prosseguindo...")
+            debug_serializer_flow(serializer, "Após validação bem-sucedida")
+            
+            # 🐛 BREAKPOINT 4: Salvando (AQUI ENTRA NO CREATE DO SERIALIZER!)
+            print("🎯 Chamando serializer.save()...")
+            print("   ↳ Isso vai chamar o método create() do serializer")
+            
+            user = serializer.save()
+            
+            print(f"✅ Usuário criado: {user.email} (ID: {user.id})")
+            
+            # 🎯 Gerar tokens JWT
+            print("🎯 Gerando tokens JWT...")
+            refresh = RefreshToken.for_user(user)
+            access_token = refresh.access_token
+            
+            print(f"✅ Tokens gerados")
+            print(f"   ↳ Access token: {str(access_token)[:20]}...")
+            print(f"   ↳ Refresh token: {str(refresh)[:20]}...")
+            
+            # 🎯 Preparar resposta
+            response_data = {
+                'success': True,
+                'message': 'Usuário registrado com sucesso',
+                'data': {
+                    'user': UserProfileSerializer(user).data,
+                    'tokens': {
+                        'access': str(access_token),
+                        'refresh': str(refresh)
+                    }
+                }
+            }
+            
+            print("✅ Registro concluído com sucesso!")
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        
+        else:
+            # 🐛 BREAKPOINT 5: Erros de validação
+            print("❌ Dados inválidos!")
+            print(f"❌ Erros: {serializer.errors}")
+            debug_serializer_flow(serializer, "Após validação com erros")
+            
+            return Response({
+                'success': False,
+                'message': 'Dados inválidos',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+            # ==============================================================================
+# 🛠️ SERIALIZER DE REGISTRO - PASSO A PASSO
+# ==============================================================================
+
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    """
+    📋 PROPÓSITO: Registrar novos usuários no sistema
+    
+    🔍 DEBUGGING: Para acompanhar este serializer:
+    
+    1. Coloque breakpoint na linha 86: "def validate_email(self, value):"
+    2. Coloque breakpoint na linha 105: "def validate_cpf(self, value):"
+    3. Coloque breakpoint na linha 125: "def validate(self, attrs):"
+    4. Coloque breakpoint na linha 151: "def create(self, validated_data):"
+    5. Faça requisição POST para /api/auth/register/
+    6. Acompanhe a execução seguindo a ordem acima
+    
+    💡 DICA: Os métodos validate_* são chamados AUTOMATICAMENTE pelo DRF
+    quando você chama serializer.is_valid()
+    """
+    
+    # Campos extras que não estão no model
+    password = serializers.CharField(
+        write_only=True,  # Não aparece na resposta JSON
+        min_length=8,
+        style={'input_type': 'password'}  # Para forms HTML
+    )
+    
+    password_confirm = serializers.CharField(
+        write_only=True,
+        style={'input_type': 'password'}
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = [
+            'email', 'password', 'password_confirm', 
+            'first_name', 'last_name', 'cpf', 'phone', 'role',
+            'cnh_numero', 'cnh_categoria', 'cnh_validade'
+        ]
+        
+        # Campos obrigatórios
+        extra_kwargs = {
+            'email': {'required': True},
+            'cpf': {'required': True},
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+        }
+
+    # 🔍 MÉTODO 1: Validação individual do email
+    def validate_email(self, value):
+        """
+        ⚡ ESTE MÉTODO É CHAMADO AUTOMATICAMENTE!
+        
+        Quando você chama serializer.is_valid(), o DRF procura por métodos
+        com o padrão validate_<nome_do_campo> e os executa automaticamente.
+        
+        🐛 DEBUGGING:
+        - Coloque breakpoint AQUI na linha abaixo
+        - Faça uma requisição e veja como o método é chamado
+        """
+        print(f"🔍 VALIDATE_EMAIL chamado com: {value}")
+        print(f"🔍 Tipo do valor: {type(value)}")
+        
+        # Verificar se email já existe
+        if CustomUser.objects.filter(email=value).exists():
+            print(f"❌ Email {value} já existe no banco!")
+            raise serializers.ValidationError("Este email já está em uso.")
+        
+        print(f"✅ Email {value} está disponível")
+        return value.lower()  # Retorna email em minúsculo
+
+    # 🔍 MÉTODO 2: Validação individual do CPF
+    def validate_cpf(self, value):
+        """
+        ⚡ TAMBÉM É CHAMADO AUTOMATICAMENTE!
+        
+        🐛 DEBUGGING: Coloque breakpoint aqui e observe:
+        - Como o valor chega
+        - Como é processado
+        - Como é retornado
+        """
+        print(f"🔍 VALIDATE_CPF chamado com: {value}")
+        
+        # Limpar CPF (remover pontos e traços)
+        cpf_limpo = ''.join(filter(str.isdigit, value))
+        print(f"🔍 CPF após limpeza: {cpf_limpo}")
+        
+        # Validar tamanho
+        if len(cpf_limpo) != 11:
+            print(f"❌ CPF tem {len(cpf_limpo)} dígitos, precisa ter 11")
+            raise serializers.ValidationError("CPF deve ter exatamente 11 dígitos.")
+        
+        # Verificar se já existe
+        if CustomUser.objects.filter(cpf=cpf_limpo).exists():
+            print(f"❌ CPF {cpf_limpo} já existe no banco!")
+            raise serializers.ValidationError("Este CPF já está cadastrado.")
+        
+        print(f"✅ CPF {cpf_limpo} está válido")
+        return cpf_limpo
+
+    # 🔍 MÉTODO 3: Validação geral (todos os campos juntos)
+    def validate(self, attrs):
+        """
+        ⚡ MÉTODO ESPECIAL: Valida o objeto completo
+        
+        Este método é chamado APÓS todos os validate_<campo> individuais.
+        Aqui você pode validar regras que envolvem múltiplos campos.
+        
+        🐛 DEBUGGING: 
+        - Coloque breakpoint aqui
+        - Inspecione a variável 'attrs'
+        - Veja todos os dados validados juntos
+        """
+        print(f"🔍 VALIDATE geral chamado!")
+        print(f"🔍 Dados recebidos: {attrs}")
+        
+        # Verificar se senhas coincidem
+        password = attrs.get('password')
+        password_confirm = attrs.get('password_confirm')
+        
+        print(f"🔍 Comparando senhas...")
+        if password != password_confirm:
+            print(f"❌ Senhas não coincidem!")
+            raise serializers.ValidationError("As senhas não coincidem.")
+        
+        # Validar força da senha usando validadores do Django
+        try:
+            print(f"🔍 Validando força da senha...")
+            validate_password(password)
+            print(f"✅ Senha aprovada nos validadores Django")
+        except ValidationError as e:
+            print(f"❌ Senha rejeitada: {e.messages}")
+            raise serializers.ValidationError({"password": e.messages})
+        
+        # Remover confirmação da senha (não vamos salvá-la)
+        attrs.pop('password_confirm', None)
+        print(f"🔍 password_confirm removido dos dados")
+        
+        print(f"🔍 Dados finais validados: {attrs}")
+        return attrs
+
+    # 🔍 MÉTODO 4: Criação do objeto
+    def create(self, validated_data):
+        """
+        ⚡ MÉTODO DE CRIAÇÃO: Só é chamado quando você chama serializer.save()
+        
+        Recebe os dados já validados e limpos pelos métodos validate acima.
+        
+        🐛 DEBUGGING:
+        - Coloque breakpoint aqui
+        - Observe que validated_data já está limpo e validado
+        - Acompanhe a criação do usuário
+        """
+        print(f"🔍 CREATE chamado!")
+        print(f"🔍 Dados validados recebidos: {validated_data}")
+        
+        # Extrair senha dos dados
+        password = validated_data.pop('password')
+        print(f"🔍 Senha extraída dos dados")
+        
+        # Criar usuário usando nosso manager customizado
+        print(f"🔍 Criando usuário com CustomUserManager...")
+        user = CustomUser.objects.create_user(
+            password=password,
+            **validated_data
+        )
+        
+        print(f"✅ Usuário criado com sucesso!")
+        print(f"🔍 ID do usuário: {user.id}")
+        print(f"🔍 Email do usuário: {user.email}")
+        
+        return user

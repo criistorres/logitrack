@@ -60,7 +60,7 @@ export default function RootLayout({
             dangerouslySetInnerHTML={{
               __html: `
                 console.log('🚀 LogiTrack Frontend carregado em modo desenvolvimento');
-                console.log('🔗 API Base URL: ${process.env.NODE_ENV === 'development' ? 'http://192.168.0.12:8000/api' : 'produção'}');
+                console.log('🔗 API Base URL: ${process.env.NODE_ENV === 'development' ? 'http://192.168.0.2:8000/api' : 'produção'}');
               `,
             }}
           />

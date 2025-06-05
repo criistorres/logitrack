@@ -41,7 +41,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '0.0.0.0',
     # Adicione seu IP específico aqui (substitua XXX.XXX.X.XXX pelo seu IP real)
-    '192.168.0.12',  # ← SUBSTITUA pelo seu IP real
+    '192.168.0.2',  # ← SUBSTITUA pelo seu IP real
     # Adicione outros IPs se necessário
     '192.168.0.1',    # Gateway comum
     '10.0.0.1',       # Rede alternativa
@@ -275,8 +275,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",     # React Native (Expo)
     "http://127.0.0.1:8081",     # React Native alternativo
     # ADICIONE SEU IP AQUI:
-    "http://192.168.0.12:8000", # ← SUBSTITUA pelo seu IP real
-    "http://192.168.0.12:8081", # ← Para Expo no seu IP
+    "http://192.168.0.2:8000", # ← SUBSTITUA pelo seu IP real
+    "http://192.168.0.2:8081", # ← Para Expo no seu IP
 ]
 
 # Para desenvolvimento - permite qualquer origem (REMOVER EM PRODUÇÃO!)
