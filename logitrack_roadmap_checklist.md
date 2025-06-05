@@ -109,7 +109,7 @@
 
 #### **🌐 Frontend (Next.js)**
 - [ ] **Interface web de login**
-  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Data**: 04/06/2025 | **Status**: ✅ Concluído
   - **Descrição**: Páginas SSR para login, registro admin, reset de senha para logística
   - **Validação**: SSR funciona, autenticação integrada, redirecionamentos corretos
   - **Comandos**:
@@ -118,7 +118,7 @@
     # Integrar com Django API para autenticação
     ```
 
-**📊 Progresso Etapa 1.2**: 4/5 itens (80%) | **Status**: 🟨 Quase Completo
+**📊 Progresso Etapa 1.2**: 5/5 itens (80%) | **Status**: ✅ Concluído
 
 ---
 
@@ -131,26 +131,26 @@
 - [ ] **Modelo OrdemTransporte**
   - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
   - **Descrição**: Modelo principal com status, motoristas, datas, localizações, observações
-  - **Validação**: Migrações aplicadas, admin interface funcional, relacionamentos corretos
-  - **Arquivos**: `core/models.py`, campos conforme documentação inicial
+  - **Validação**: Migrações aplicadas, admin interface funcional, relacionamentos corretos, documentacao .rest
+  - **Arquivos**: `models.py`, campos conforme documentação inicial
 
 - [ ] **Modelo NotaFiscal**
   - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
   - **Descrição**: NFs vinculadas a OTs, dados do destinatário, status individual por NF
   - **Validação**: Relacionamento N:1 com OT, campos obrigatórios validados
-  - **Arquivos**: `core/models.py`, unique_together OT+numero+serie
+  - **Arquivos**: `models.py`, unique_together OT+numero+serie
 
 - [ ] **Modelo Arquivo**
   - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
   - **Descrição**: Sistema de upload (canhotos, fotos, comprovantes) com categorização
   - **Validação**: Upload funciona, tipos de arquivo validados, preview disponível
-  - **Arquivos**: `core/models.py`, storage configurado em settings
+  - **Arquivos**: `models.py`, storage configurado em settings
 
 - [ ] **Modelo TransferenciaOT**
   - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
   - **Descrição**: Histórico de transferências entre motoristas com auditoria completa
   - **Validação**: Log de todas as transferências, motorista origem/destino corretos
-  - **Arquivos**: `core/models.py`, campos de auditoria implementados
+  - **Arquivos**: `models.py`, campos de auditoria implementados
 
 - [ ] **Configuração de relacionamentos**
   - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
