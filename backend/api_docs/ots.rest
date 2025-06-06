@@ -1,5 +1,5 @@
 # ==============================================================================
-# LOGITRACK - TESTES DA API DE ORDENS DE TRANSPORTE
+# LOGITRACK - API DE ORDENS DE TRANSPORTE (VERSÃO ATUALIZADA)
 # ==============================================================================
 # 
 # 📋 INSTRUÇÕES:
@@ -9,15 +9,13 @@
 # 4. Substitua os tokens nos headers Authorization
 #
 # 🎯 ORDEM RECOMENDADA PARA TESTES:
-# 1. Verificar endpoints disponíveis
-# 2. Fazer login para obter tokens
-# 3. Criar uma OT
-# 4. Listar OTs
-# 5. Ver detalhes da OT
-# 6. Atualizar OT
-# 7. Testar transferência
-# 8. Upload de arquivo
-# 9. Finalizar OT
+# 1. Fazer login para obter tokens
+# 2. Criar uma OT
+# 3. Listar OTs
+# 4. Ver detalhes da OT
+# 5. Atualizar status
+# 6. Testar transferência com aceitação
+# 7. Finalizar OT
 #
 # ==============================================================================
 
@@ -27,486 +25,558 @@
 @otsURL = {{baseURL}}/api/ots
 
 # Variáveis para tokens (cole após fazer login)
-@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+@accessTokenMotorista1 = 
+@accessTokenMotorista2 = 
+@accessTokenLogistica = 
 @refreshToken = 
 
-# Variáveis de teste
-@testOTId = 
-@testMotoristaId = 
+# Variáveis de teste dinâmicas
+@otId = 
+@transferenciaId = 
 
 # ==============================================================================
-# 🏠 1. VERIFICAÇÃO INICIAL
+# 🔐 1. AUTENTICAÇÃO INICIAL (OBRIGATÓRIO)
 # ==============================================================================
 
-### 1.1 Verificar se API está funcionando
-GET {{baseURL}}
+### 1.1 Login Motorista 1 (Carlos)
+POST {{authURL}}/login/
 Content-Type: application/json
 
-# Esperado: Informações da API incluindo endpoint /api/ots/
+{
+    "email": "carlos@email.com",
+    "password": "senha123456"
+}
 
-### 1.2 Ver endpoints de OT disponíveis
+# 🚨 COPIE o access_token da resposta para @accessTokenMotorista1
+
+### 1.2 Login Motorista 2 (Antônio) 
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "antonio@email.com",
+    "password": "senha123456"
+}
+
+# 🚨 COPIE o access_token da resposta para @accessTokenMotorista2
+
+### 1.3 Login Logística
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "logistica@empresa.com",
+    "password": "senha123456"
+}
+
+# 🚨 COPIE o access_token da resposta para @accessTokenLogistica
+
+# ==============================================================================
+# 🏠 2. VERIFICAÇÃO INICIAL
+# ==============================================================================
+
+### 2.1 Verificar endpoints disponíveis
 GET {{otsURL}}/endpoints/
 Content-Type: application/json
 
 # Esperado: Lista completa de todos os endpoints de OT
 
-# ==============================================================================
-# 🔐 2. AUTENTICAÇÃO (OBRIGATÓRIO)
-# ==============================================================================
-
-### 2.1 Fazer login como motorista
-POST {{authURL}}/login/
+### 2.2 Verificar se API está funcionando
+GET {{baseURL}}
 Content-Type: application/json
-
-{
-    "email": "jose@email.com",
-    "password": "Laura@2024"
-}
-
-# 🚨 IMPORTANTE: Copie o access_token da resposta e cole na variável @accessToken acima!
-
-### 2.2 (Opcional) Login como logística para testes avançados
-POST {{authURL}}/login/
-Content-Type: application/json
-
-{
-    "email": "logistica1@teste.com",
-    "password": "senha123456"
-}
 
 # ==============================================================================
 # 🚚 3. CRUD BÁSICO - ORDENS DE TRANSPORTE
 # ==============================================================================
 
-### 3.1 Criar nova OT (apenas motoristas)
+### 3.1 Criar nova OT (Motorista Carlos)
 POST {{otsURL}}/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+Authorization: Bearer {{accessTokenMotorista1}}
 Content-Type: application/json
 
 {
-    "cliente_nome": "Empresa ABC Ltda",
-    "endereco_entrega": "Rua das Flores, 123 - Centro",
+    "cliente_nome": "Distribuidora ABC Ltda",
+    "endereco_entrega": "Rua Industrial, 500 - Distrito Industrial",
     "cidade_entrega": "Campinas",
-    "observacoes": "Entrega urgente - Cliente preferencial",
+    "observacoes": "Carregamento urgente - 25 pallets",
     "latitude_origem": -23.5505,
     "longitude_origem": -46.6333,
     "endereco_origem": "CD São Paulo - Vila Olímpia"
 }
 
-# 🚨 SUBSTITUA o token pelo obtido no login!
-#
+# 🚨 COPIE o ID da OT criada para @otId
 # Esperado:
 # - Status 201 Created
-# - OT criada com número automático (ex: OT202412060001)
+# - OT criada com número automático
 # - Status inicial: INICIADA
-# - Motorista criador = motorista atual = usuário logado
-#
-# 🐛 DEBUGGING:
-# - Coloque breakpoint em OrdemTransporteListCreateView.create()
-# - Acompanhe geração automática do número da OT
-# - Veja como motorista_criador é definido automaticamente
+# - Motorista criador = motorista atual = Carlos
 
-### 3.2 Listar OTs do usuário logado
+### 3.2 Listar OTs do motorista logado
 GET {{otsURL}}/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+Authorization: Bearer {{accessTokenMotorista1}}
 Content-Type: application/json
 
 # Esperado:
 # - Status 200 OK
-# - Lista das OTs do motorista (apenas suas próprias)
+# - Lista das OTs do Carlos
 # - Estatísticas por status
-# - Dados resumidos para performance
-#
-# 🐛 DEBUGGING:
-# - Coloque breakpoint em get_queryset()
-# - Observe filtragem por usuário (motorista só vê as suas)
-# - Compare com usuário logística (vê todas)
 
-### 3.3 Ver detalhes de uma OT específica
-GET {{otsURL}}/1/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+### 3.3 Ver detalhes da OT criada
+GET {{otsURL}}/{{otId}}/
+Authorization: Bearer {{accessTokenMotorista1}}
 Content-Type: application/json
 
-# 🚨 SUBSTITUA "1" pelo ID da OT criada no passo 3.1!
-#
+# 🚨 SUBSTITUA {{otId}} pelo ID real da OT
 # Esperado:
-# - Status 200 OK se for dono da OT
-# - Status 403 Forbidden se tentar ver OT de outro motorista
-# - Dados completos: arquivos, transferências, timeline
-#
-# 🐛 DEBUGGING:
-# - Coloque breakpoint em get_object()
-# - Observe verificação de permissões
-# - Veja dados completos vs resumidos
+# - Status 200 OK
+# - Dados completos da OT
+# - Timeline de atualizações
 
-### 3.4 Atualizar dados da OT
-PATCH {{otsURL}}/1/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+### 3.4 Tentar ver OT de outro motorista (deve dar erro)
+GET {{otsURL}}/{{otId}}/
+Authorization: Bearer {{accessTokenMotorista2}}
+Content-Type: application/json
+
+# Esperado:
+# - Status 403 Forbidden
+# - Motorista 2 não pode ver OT do Motorista 1
+
+# ==============================================================================
+# 🔄 4. FLUXO DE STATUS - SIMULAÇÃO REAL
+# ==============================================================================
+
+### 4.1 Iniciar carregamento
+PATCH {{otsURL}}/{{otId}}/status/
+Authorization: Bearer {{accessTokenMotorista1}}
 Content-Type: application/json
 
 {
-    "observacoes": "Entrega urgente - Cliente confirmou recebimento para hoje às 14h",
-    "status": "EM_CARREGAMENTO"
+    "status": "EM_CARREGAMENTO",
+    "observacao": "Iniciando carregamento no CD - Equipe preparando 25 pallets"
 }
 
 # Esperado:
 # - Status 200 OK
-# - Dados atualizados
-# - Registro de atualização criado automaticamente
-# - Validação de transição de status
-#
-# 🐛 DEBUGGING:
-# - Coloque breakpoint em update()
-# - Acompanhe validação de transição de status
-# - Veja criação automática de AtualizacaoOT
+# - Status atualizado
+# - Registro de atualização criado
 
-# ==============================================================================
-# 🔄 4. AÇÕES ESPECÍFICAS
-# ==============================================================================
-
-### 4.1 Atualizar apenas status da OT
-PATCH {{otsURL}}/1/status/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+### 4.2 Sair em trânsito
+PATCH {{otsURL}}/{{otId}}/status/
+Authorization: Bearer {{accessTokenMotorista1}}
 Content-Type: application/json
 
 {
     "status": "EM_TRANSITO",
-    "observacao": "Saindo do CD - Previsão de chegada: 14h30"
+    "observacao": "Saindo do CD - ETA cliente: 14h30. Rota via Anhanguera"
 }
 
-# Esperado:
-# - Status 200 OK
-# - Status atualizado com validação de transição
-# - Observação registrada
-#
-# 🐛 DEBUGGING:
-# - Observe validação de transições válidas
-# - INICIADA → EM_CARREGAMENTO ✅
-# - EM_CARREGAMENTO → EM_TRANSITO ✅
-# - EM_TRANSITO → ENTREGUE ✅
-# - Estados finais não podem transicionar ❌
-
-### 4.2 Transferir OT para outro motorista
-POST {{otsURL}}/2/transferir/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
-Content-Type: application/json
-
-{
-    "motorista_destino_id": 3,
-    "motivo": "Veículo apresentou problema mecânico - transferindo para van",
-    "latitude": -23.5489,
-    "longitude": -46.6388,
-    "endereco": "Rod. Anhanguera km 20 - Posto Shell"
-}
-
-# 🚨 SUBSTITUA "3" pelo ID de outro motorista real!
-#
-# Esperado:
-# - Status 201 Created
-# - Se for o próprio motorista: transferência APROVADA automaticamente
-# - Se for outro motorista: transferência PENDENTE (precisa aprovação)
-# - Registro de transferência criado
-#
-# 🐛 DEBUGGING:
-# - Coloque breakpoint em TransferirOTView.post()
-# - Observe diferença entre transferência direta vs solicitação
-# - Veja atualização automática do motorista_atual
-
-### 4.3 Criar segunda OT para testar busca
-POST {{otsURL}}/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
-Content-Type: application/json
-
-{
-    "cliente_nome": "Supermercado XYZ",
-    "endereco_entrega": "Av. Paulista, 1000 - Bela Vista",
-    "cidade_entrega": "São Paulo",
-    "observacoes": "Entregar no recebimento - Horário: 8h às 17h"
-}
-
-# ==============================================================================
-# 📎 5. UPLOAD DE ARQUIVOS
-# ==============================================================================
-
-### 5.1 Upload de canhoto (simular)
-# POST {{otsURL}}/1/arquivos/
-# Authorization: Bearer SEU_TOKEN_AQUI
-# Content-Type: multipart/form-data
-
-# arquivo=@/caminho/para/canhoto.jpg
-# tipo=CANHOTO
-# descricao=Canhoto assinado pelo cliente
-
-# 📝 NOTA: O VS Code REST Client não suporta upload de arquivo facilmente.
-# Use Postman ou curl para testar upload:
-#
-# curl -X POST http://localhost:8000/api/ots/1/arquivos/ \
-#   -H "Authorization: Bearer SEU_TOKEN" \
-#   -F "arquivo=@canhoto.jpg" \
-#   -F "tipo=CANHOTO" \
-#   -F "descricao=Canhoto assinado"
-
-# ==============================================================================
-# 🏁 6. FINALIZAÇÃO
-# ==============================================================================
-
-### 6.1 Finalizar OT como entregue
-POST {{otsURL}}/3/finalizar/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
-Content-Type: application/json
-
-{
-    "observacoes_entrega": "Entregue ao Sr. João Silva na portaria principal. Recebimento confirmado às 14:25.",
-    "latitude_entrega": -22.9068,
-    "longitude_entrega": -47.0626,
-    "endereco_entrega_real": "Empresa ABC - Portaria Principal"
-}
-
-# Esperado:
-# - Status 200 OK
-# - OT marcada como ENTREGUE
-# - data_finalizacao preenchida automaticamente
-# - Dados de entrega registrados
-# - OT não pode mais ser editada
-#
-# 🐛 DEBUGGING:
-# - Coloque breakpoint em FinalizarOTView.post()
-# - Observe validação de status antes da finalização
-# - Veja atualização automática de data_finalizacao
-
-# ==============================================================================
-# 🔍 7. BUSCA E FILTROS
-# ==============================================================================
-
-### 7.1 Buscar OT por número
-GET {{otsURL}}/buscar/?numero_ot=OT20241206
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
-Content-Type: application/json
-
-# 🚨 SUBSTITUA pelo número real de uma OT criada!
-
-### 7.2 Buscar por cliente
-GET {{otsURL}}/buscar/?cliente_nome=ABC
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
-Content-Type: application/json
-
-### 7.3 Buscar por status
-GET {{otsURL}}/buscar/?status=ENTREGUE
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzMzNTEyMjE4LCJpYXQiOjE3MzM1MDg2MTgsImp0aSI6IjAwYWYwMTI1MGI9NzRiODA5ZGRkNGY2OWNhZDVhNzRiIiwidXNlcl9pZCI6Mn0.PQkJVy6jc7D6O_wPH97YWjsUjWh64Hpxlqpn7N1NVPU
-Content-Type: application/json
-
-### 7.4 Buscar com múltiplos filtros
-GET {{otsURL}}/buscar/?cliente_nome=ABC&status=EM_TRANSITO&data_inicio=2024-12-01
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
-Content-Type: application/json
-
-# ==============================================================================
-# 📊 8. RELATÓRIOS E ESTATÍSTICAS
-# ==============================================================================
-
-### 8.1 Estatísticas das OTs
-GET {{otsURL}}/stats/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
-Content-Type: application/json
-
-# Esperado:
-# - Estatísticas gerais (total, ativas, finalizadas)
-# - Breakdown por status
-# - Estatísticas dos últimos 30 dias
-# - Por motorista (apenas logística/admin)
-#
-# 🐛 DEBUGGING:
-# - Observe diferença entre motorista vs logística
-# - Veja filtragem automática por usuário
-
-# ==============================================================================
-# 🛠️ 9. DEBUGGING E TROUBLESHOOTING
-# ==============================================================================
-
-### 9.1 Debug geral do usuário
-GET {{otsURL}}/debug/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
-Content-Type: application/json
-
-# Esperado:
-# - Info do usuário logado
-# - Quantas OTs pode ver
-# - Total de OTs no sistema
-
-### 9.2 Debug de OT específica
-GET {{otsURL}}/debug/1/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
-Content-Type: application/json
-
-# Esperado:
-# - Detalhes da OT
-# - Permissões calculadas
-# - Info do usuário
-# - Estado da OT (pode ser editada, transferida, etc)
-
-# ==============================================================================
-# 🚨 10. TESTES DE ERRO E VALIDAÇÃO
-# ==============================================================================
-
-### 10.1 Tentar criar OT sem dados obrigatórios
-POST {{otsURL}}/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
-Content-Type: application/json
-
-{
-    "observacoes": "Apenas observação, sem dados obrigatórios"
-}
-
-# Esperado:
-# - Status 400 Bad Request
-# - Erros específicos dos campos obrigatórios
-
-### 10.2 Tentar transição de status inválida
-PATCH {{otsURL}}/1/status/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+### 4.3 Testar transição inválida (deve dar erro)
+PATCH {{otsURL}}/{{otId}}/status/
+Authorization: Bearer {{accessTokenMotorista1}}
 Content-Type: application/json
 
 {
     "status": "INICIADA"
 }
 
-# Se a OT já estiver ENTREGUE, isso deve dar erro:
+# Esperado:
 # - Status 400 Bad Request
-# - Erro: "Não é possível transicionar de Entregue para Iniciada"
+# - Erro: "Não é possível transicionar de Em Trânsito para Iniciada"
 
-### 10.3 Tentar acessar OT sem permissão
-GET {{otsURL}}/999/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+# ==============================================================================
+# 🔄 5. SISTEMA DE TRANSFERÊNCIA COM ACEITAÇÃO
+# ==============================================================================
+
+### 5.1 Carlos transfere OT para Antônio (aguarda aceitação)
+POST {{otsURL}}/{{otId}}/transferir/
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+{
+    "motorista_destino_id": 2,
+    "motivo": "Problema mecânico no veículo - transferindo para van",
+    "latitude": -23.5489,
+    "longitude": -46.6388,
+    "endereco": "Rod. Anhanguera km 20 - Posto Shell"
+}
+
+# 🚨 SUBSTITUA "2" pelo ID real do Antônio
+# 🚨 COPIE o ID da transferência para @transferenciaId
+# Esperado:
+# - Status 201 Created
+# - Status: AGUARDANDO_ACEITACAO
+# - Motorista atual ainda é Carlos até Antônio aceitar
+
+### 5.2 Antônio verifica suas transferências pendentes
+GET {{otsURL}}/transferencias/minhas/
+Authorization: Bearer {{accessTokenMotorista2}}
 Content-Type: application/json
 
 # Esperado:
-# - Status 404 Not Found se OT não existir
-# - Status 403 Forbidden se OT existir mas não for do usuário
+# - Lista de transferências que aguardam ação do Antônio
+# - Categorização: para_aceitar, aguardando_aprovacao, etc.
 
-### 10.4 Tentar criar OT sem estar logado
-POST {{otsURL}}/
+### 5.3 Antônio aceita a transferência
+POST {{otsURL}}/transferencias/{{transferenciaId}}/aceitar/
+Authorization: Bearer {{accessTokenMotorista2}}
 Content-Type: application/json
 
 {
-    "cliente_nome": "Teste",
-    "endereco_entrega": "Teste",
-    "cidade_entrega": "Teste"
+    "observacao": "Aceito a transferência. Já estou a caminho do local para assumir a carga."
+}
+
+# 🚨 SUBSTITUA {{transferenciaId}} pelo ID real
+# Esperado:
+# - Status 200 OK
+# - Transferência aprovada
+# - Motorista atual da OT agora é Antônio
+
+### 5.4 Verificar que OT agora pertence ao Antônio
+GET {{otsURL}}/{{otId}}/
+Authorization: Bearer {{accessTokenMotorista2}}
+Content-Type: application/json
+
+# Esperado:
+# - Status 200 OK
+# - motorista_atual agora é Antônio
+# - Timeline mostra a transferência
+
+### 5.5 Carlos tenta acessar OT transferida (deve dar erro)
+GET {{otsURL}}/{{otId}}/
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+# Esperado:
+# - Status 403 Forbidden
+# - Carlos não pode mais acessar após transferir
+
+# ==============================================================================
+# 🔄 7. SISTEMA DE APROVAÇÃO LOGÍSTICA
+# ==============================================================================
+
+### 7.1 Logística verifica transferências pendentes
+GET {{otsURL}}/transferencias/logistica/
+Authorization: Bearer {{accessTokenLogistica}}
+Content-Type: application/json
+
+# Esperado:
+# - Lista de transferências com status PENDENTE
+# - Que aguardam aprovação da logística
+
+### 7.2 Logística aprova transferência pendente
+POST {{otsURL}}/transferencias/{{transferenciaId}}/aprovar/
+Authorization: Bearer {{accessTokenLogistica}}
+Content-Type: application/json
+
+{
+    "observacao": "Transferência aprovada - Solicitação válida e motorista disponível"
 }
 
 # Esperado:
-# - Status 401 Unauthorized
-# - Erro de token ausente/inválido
+# - Status 200 OK
+# - Transferência aprovada
+# - Motorista atual da OT atualizado
+# - Timeline registrada
 
-# ==============================================================================
-# 🎯 11. FLUXO COMPLETO - CENÁRIO REAL
-# ==============================================================================
+### 7.3 Criar nova transferência para testar rejeição
+POST {{otsURL}}/{{otId}}/transferir/
+Authorization: Bearer {{accessTokenMotorista2}}
+Content-Type: application/json
 
-### 11.1 Cenário: Motorista João faz entrega completa
+{
+    "motorista_destino_id": 3,
+    "motivo": "Teste de rejeição pela logística"
+}
 
-# Passo 1: João chega no CD e cria OT
+# SALVE o ID da nova transferência como @transferenciaRejeicaoId
+
+### 7.4 Logística rejeita transferência
+POST {{otsURL}}/NEW_TRANSFER_ID/rejeitar/
+Authorization: Bearer {{accessTokenLogistica}}
+Content-Type: application/json
+
+{
+    "observacao": "Transferência rejeitada - Motorista destino já possui muitas OTs em andamento"
+}
+
+# Esperado:
+# - Status 200 OK
+# - Transferência rejeitada
+# - OT continua com motorista original
+
+### 6.1 Criar segunda OT para testar recusa
 POST {{otsURL}}/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+Authorization: Bearer {{accessTokenMotorista1}}
 Content-Type: application/json
 
 {
-    "cliente_nome": "Distribuidora Norte",
-    "endereco_entrega": "Rua Industrial, 500 - Distrito Industrial",
-    "cidade_entrega": "Jundiaí",
-    "observacoes": "Carregamento completo - 25 pallets",
-    "latitude_origem": -23.5505,
-    "longitude_origem": -46.6333,
-    "endereco_origem": "CD Matriz"
+    "cliente_nome": "Supermercado XYZ",
+    "endereco_entrega": "Av. Paulista, 1000 - Bela Vista", 
+    "cidade_entrega": "São Paulo",
+    "observacoes": "Entrega expressa - Centro de SP"
 }
 
-# Passo 2: João inicia carregamento
-PATCH {{otsURL}}/ID_DA_OT_CRIADA/status/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+# SALVE o novo ID como @otId2
+
+### 6.2 Carlos tenta transferir para Antônio novamente
+POST {{otsURL}}/NEW_OT_ID/transferir/
+Authorization: Bearer {{accessTokenMotorista1}}
 Content-Type: application/json
 
 {
-    "status": "EM_CARREGAMENTO",
-    "observacao": "Iniciando carregamento - equipe do CD preparando mercadoria"
+    "motorista_destino_id": 2,
+    "motivo": "Teste de recusa de transferência"
 }
 
-# Passo 3: João sai em trânsito
-PATCH {{otsURL}}/ID_DA_OT_CRIADA/status/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+# SALVE o ID da transferência como @transferenciaId2
+
+### 6.3 Antônio recusa a transferência
+POST {{otsURL}}/transferencias/NEW_TRANSFER_ID/recusar/
+Authorization: Bearer {{accessTokenMotorista2}}
 Content-Type: application/json
 
 {
-    "status": "EM_TRANSITO",
-    "observacao": "Saindo do CD - ETA cliente: 11h30"
+    "observacao": "Não posso aceitar - já estou com outra OT em andamento"
 }
 
-# Passo 4: João finaliza entrega
-POST {{otsURL}}/ID_DA_OT_CRIADA/finalizar/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTY4NDg2LCJpYXQiOjE3NDkxNjQ4ODYsImp0aSI6IjdlYWVlNDBkOGVlZjQ4NjBhYmY2ZDQ0ZDE4ZTdiMjAxIiwidXNlcl9pZCI6Mn0.y7-KP-FAhsXZXiYHq0qf53k6yI3AuJUrsNh4SlCprFE
+# Esperado:
+# - Status 200 OK
+# - Transferência rejeitada
+# - OT continua com Carlos
+
+# ==============================================================================
+# 🔄 8. TRANSFERÊNCIA VIA LOGÍSTICA (APROVAÇÃO DIRETA)
+# ==============================================================================
+
+### 8.1 Logística transfere OT diretamente
+POST {{otsURL}}/{{otId}}/transferir/
+Authorization: Bearer {{accessTokenLogistica}}
 Content-Type: application/json
 
 {
-    "observacoes_entrega": "Entrega realizada com sucesso. 25 pallets conferidos e aceitos pelo Sr. Carlos (gerente de recebimento). Sem avarias.",
-    "latitude_entrega": -23.1864,
-    "longitude_entrega": -46.8842,
-    "endereco_entrega_real": "Distribuidora Norte - Dock 3"
+    "motorista_destino_id": 1,
+    "motivo": "Reagendamento por solicitação do cliente - retorna para Carlos"
+}
+
+# Esperado:
+# - Status 201 Created
+# - Status: APROVADA (sem aguardar aceitação)
+# - Transferência efetivada imediatamente
+
+# ==============================================================================
+# 📎 9. UPLOAD DE DOCUMENTOS
+# ==============================================================================
+
+### 8.1 Upload de canhoto (simular com curl)
+# POST {{otsURL}}/{{otId}}/arquivos/
+# Authorization: Bearer {{accessTokenMotorista2}}
+# Content-Type: multipart/form-data
+
+# Use este comando curl para testar upload:
+# curl -X POST http://localhost:8000/api/ots/{ID}/arquivos/ \
+#   -H "Authorization: Bearer SEU_TOKEN" \
+#   -F "arquivo=@canhoto.jpg" \
+#   -F "tipo=CANHOTO" \
+#   -F "descricao=Canhoto assinado pelo cliente"
+
+# ==============================================================================
+# 🏁 9. FINALIZAÇÃO DA OT
+# ==============================================================================
+
+### 9.1 Antônio finaliza a entrega
+POST {{otsURL}}/{{otId}}/finalizar/
+Authorization: Bearer {{accessTokenMotorista2}}
+Content-Type: application/json
+
+{
+    "observacoes_entrega": "Entrega realizada com sucesso. 25 pallets conferidos e aceitos pelo Sr. João (gerente). Sem avarias.",
+    "latitude_entrega": -22.9068,
+    "longitude_entrega": -47.0626,
+    "endereco_entrega_real": "Distribuidora ABC - Dock 3 - Portaria Principal"
+}
+
+# Esperado:
+# - Status 200 OK
+# - OT finalizada como ENTREGUE
+# - data_finalizacao preenchida
+# - OT não pode mais ser editada
+
+### 9.2 Tentar editar OT finalizada (deve dar erro)
+PATCH {{otsURL}}/{{otId}}/status/
+Authorization: Bearer {{accessTokenMotorista2}}
+Content-Type: application/json
+
+{
+    "status": "EM_TRANSITO"
+}
+
+# Esperado:
+# - Status 400 Bad Request
+# - Erro: OT finalizada não pode ser editada
+
+# ==============================================================================
+# 🔍 10. BUSCA E RELATÓRIOS
+# ==============================================================================
+
+### 10.1 Buscar OT por número
+GET {{otsURL}}/buscar/?numero_ot=OT20241206
+Authorization: Bearer {{accessTokenLogistica}}
+Content-Type: application/json
+
+### 10.2 Buscar por cliente
+GET {{otsURL}}/buscar/?cliente_nome=ABC
+Authorization: Bearer {{accessTokenLogistica}}
+Content-Type: application/json
+
+### 10.3 Estatísticas completas (logística)
+GET {{otsURL}}/stats/
+Authorization: Bearer {{accessTokenLogistica}}
+Content-Type: application/json
+
+# Esperado:
+# - Estatísticas gerais
+# - Breakdown por status
+# - Estatísticas por motorista
+
+### 10.4 Estatísticas do motorista (filtradas)
+GET {{otsURL}}/stats/
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+# Esperado:
+# - Apenas estatísticas das OTs do Carlos
+# - Sem dados de outros motoristas
+
+# ==============================================================================
+# 🛠️ 11. DEBUGGING E TROUBLESHOOTING
+# ==============================================================================
+
+### 11.1 Debug geral das OTs
+GET {{otsURL}}/debug/
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+### 11.2 Debug de OT específica
+GET {{otsURL}}/debug/{{otId}}/
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+# ==============================================================================
+# 🚨 12. TESTES DE VALIDAÇÃO E ERRO
+# ==============================================================================
+
+### 12.1 Tentar criar OT sem dados obrigatórios
+POST {{otsURL}}/
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+{
+    "observacoes": "Apenas observação, sem dados obrigatórios"
+}
+
+# Esperado: Status 400 Bad Request
+
+### 12.2 Tentar transferir para motorista inexistente
+POST {{otsURL}}/{{otId}}/transferir/
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+{
+    "motorista_destino_id": 99999,
+    "motivo": "Teste com ID inválido"
+}
+
+# Esperado: Status 400 Bad Request
+
+### 12.3 Tentar aceitar transferência que não é sua
+POST {{otsURL}}/transferencias/{{transferenciaId}}/aceitar/
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+{
+    "observacao": "Tentando aceitar transferência de outro"
+}
+
+# Esperado: Status 403 Forbidden
+
+# ==============================================================================
+# 📊 13. FLUXO COMPLETO DE CANCELAMENTO
+# ==============================================================================
+
+### 13.1 Criar transferência para testar cancelamento
+POST {{otsURL}}/NEW_OT_ID/transferir/
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+{
+    "motorista_destino_id": 2,
+    "motivo": "Teste para cancelamento"
+}
+
+### 13.2 Cancelar transferência (quem solicitou)
+POST {{otsURL}}/transferencias/NEW_TRANSFER_ID/cancelar/
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+{
+    "observacao": "Mudança de planos - não preciso mais transferir"
+}
+
+# Esperado:
+# - Status 200 OK
+# - Transferência cancelada
+# - OT continua com o motorista original
+
+# ==============================================================================
+# 📱 14. CASOS DE USO MOBILE
+# ==============================================================================
+
+### 14.1 Lista resumida para mobile (apenas status)
+GET {{otsURL}}/?fields=id,numero_ot,status,cliente_nome
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+### 14.2 Atualização rápida de localização
+PATCH {{otsURL}}/{{otId}}/
+Authorization: Bearer {{accessTokenMotorista1}}
+Content-Type: application/json
+
+{
+    "latitude_origem": -23.5510,
+    "longitude_origem": -46.6340,
+    "endereco_origem": "Atualização GPS - Av. Paulista"
 }
 
 # ==============================================================================
-# 📊 CÓDIGOS DE RESPOSTA ESPERADOS
+# 📝 NOTAS IMPORTANTES
 # ==============================================================================
 
 """
-✅ SUCESSO:
-- 200 OK: Operação bem-sucedida (GET, PATCH)
-- 201 Created: Recurso criado (POST)
+🎯 PRINCIPAIS DIFERENÇAS DO SISTEMA:
 
-❌ ERRO DO CLIENTE:
-- 400 Bad Request: Dados inválidos
-- 401 Unauthorized: Token ausente/inválido
-- 403 Forbidden: Sem permissão
-- 404 Not Found: Recurso não encontrado
+1. **TRANSFERÊNCIAS COM ACEITAÇÃO:**
+   - Motorista → Motorista: Aguarda aceitação
+   - Logística → Qualquer: Aprovada diretamente
+   - Outros → Motorista: Aguarda aprovação da logística
 
-🔴 ERRO DO SERVIDOR:
-- 500 Internal Server Error: Erro interno (veja logs Django)
-"""
+2. **FLUXOS DE STATUS:**
+   - INICIADA → EM_CARREGAMENTO → EM_TRANSITO → ENTREGUE
+   - Estados finais: ENTREGUE, ENTREGUE_PARCIAL, CANCELADA
 
-# ==============================================================================
-# 🔧 SOLUÇÃO DE PROBLEMAS
-# ==============================================================================
+3. **PERMISSÕES:**
+   - Motoristas: apenas suas OTs
+   - Logística: todas as OTs
+   - Admin: todas as OTs + gerenciamento
 
-"""
-🚨 PROBLEMAS COMUNS:
+4. **SISTEMA DE ACEITAÇÃO:**
+   - GET /api/ots/transferencias/minhas/ (ver pendentes)
+   - POST /api/ots/transferencias/{id}/aceitar/
+   - POST /api/ots/transferencias/{id}/recusar/
+   - POST /api/ots/transferencias/{id}/cancelar/
 
-1. **Erro 401**: 
-   - Faça login novamente
-   - Verifique se token não expirou
-   - Atualize @accessToken
-
-2. **Erro 403**:
-   - Verifique se usuário tem permissão
-   - Motorista só vê suas próprias OTs
-   - Use debug endpoint para verificar
-
-3. **Erro 400**:
-   - Verifique dados obrigatórios
-   - Confira transições de status válidas
-   - Veja detalhes nos erros da resposta
-
-4. **Erro 500**:
-   - Verifique logs no terminal Django
-   - Certifique-se que migrações foram aplicadas
-   - Confira se todos os imports estão corretos
-
-🛠️ COMANDOS ÚTEIS:
-
-# Aplicar migrações
-python manage.py migrate
-
-# Criar superusuário
-python manage.py createsuperuser
-
-# Rodar servidor
-python manage.py runserver
-
-# Ver logs em tempo real
-tail -f logs/django.log
+🚨 LEMBRETE:
+- Sempre substitua {{otId}} e {{transferenciaId}} pelos valores reais
+- Copie tokens do login para as variáveis
+- Execute na ordem sugerida para melhor experiência
+- Use endpoints de debug para troubleshooting
 """

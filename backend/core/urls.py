@@ -21,6 +21,12 @@ from .views import (
     BuscarOTView,
     estatisticas_ots,
     
+    # Views de transferências
+    AceitarTransferenciaView,
+    RecusarTransferenciaView,
+    CancelarTransferenciaView,
+    MinhasTransferenciasView,
+    
     # Views de debugging
     debug_ot_info,
     debug_endpoints_ot,

@@ -1,0 +1,567 @@
+# ==============================================================================
+# LOGITRACK - SIMULAÇÃO DE CASOS REAIS DE USO
+# ==============================================================================
+# 
+# 📋 Este arquivo simula os casos de uso reais documentados:
+# - Caso 1: Entrega Direta com Único Motorista
+# - Caso 2: Transferência Planejada entre Motoristas
+#
+# 🎯 ORDEM DE EXECUÇÃO:
+# 1. Configurar usuários
+# 2. Executar Caso 1 completo
+# 3. Executar Caso 2 completo
+# 4. Verificar resultados
+#
+# ==============================================================================
+
+# VARIÁVEIS GLOBAIS
+@baseURL = http://localhost:8000
+@authURL = {{baseURL}}/api/auth
+@otsURL = {{baseURL}}/api/ots
+
+# Tokens de usuários
+@tokenCarlos = 
+@tokenJose = 
+@tokenAntonio = 
+@tokenLogistica = 
+
+# IDs dinâmicos
+@otCaso1 = 
+@otCaso2 = 
+@transferenciaId = 
+
+# ==============================================================================
+# 🔐 CONFIGURAÇÃO INICIAL - CRIAR/LOGAR USUÁRIOS
+# ==============================================================================
+
+### Setup 1.1 - Registrar Carlos (Motorista do Caso 1)
+POST {{authURL}}/register/
+Content-Type: application/json
+
+{
+    "email": "carlos.motorista@empresa.com",
+    "password": "Carlos123!",
+    "password_confirm": "Carlos123!",
+    "first_name": "Carlos",
+    "last_name": "Silva",
+    "cpf": "11111111111",
+    "phone": "11999111111",
+    "role": "motorista",
+    "cnh_numero": "11111111111",
+    "cnh_categoria": "C",
+    "cnh_validade": "2026-12-31"
+}
+
+### Setup 1.2 - Login Carlos
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "carlos.motorista@empresa.com",
+    "password": "Carlos123!"
+}
+
+# 🚨 COPIE o access_token para @tokenCarlos
+
+### Setup 2.1 - Registrar José (Motorista do Caso 2 - Caminhão Grande)
+POST {{authURL}}/register/
+Content-Type: application/json
+
+{
+    "email": "jose.caminhao@empresa.com",
+    "password": "Jose123!",
+    "password_confirm": "Jose123!",
+    "first_name": "José",
+    "last_name": "Santos",
+    "cpf": "22222222222",
+    "phone": "11999222222",
+    "role": "motorista",
+    "cnh_numero": "22222222222",
+    "cnh_categoria": "E",
+    "cnh_validade": "2026-12-31"
+}
+
+### Setup 2.2 - Login José
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "jose.caminhao@empresa.com",
+    "password": "Jose123!"
+}
+
+# 🚨 COPIE o access_token para @tokenJose
+
+### Setup 3.1 - Registrar Antônio (Motorista do Caso 2 - Van)
+POST {{authURL}}/register/
+Content-Type: application/json
+
+{
+    "email": "antonio.van@empresa.com",
+    "password": "Antonio123!",
+    "password_confirm": "Antonio123!",
+    "first_name": "Antônio",
+    "last_name": "Oliveira",
+    "cpf": "33333333333",
+    "phone": "11999333333",
+    "role": "motorista",
+    "cnh_numero": "33333333333",
+    "cnh_categoria": "B",
+    "cnh_validade": "2026-12-31"
+}
+
+### Setup 3.2 - Login Antônio
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "antonio.van@empresa.com",
+    "password": "Antonio123!"
+}
+
+# 🚨 COPIE o access_token para @tokenAntonio
+
+### Setup 4.1 - Registrar Logística
+POST {{authURL}}/register/
+Content-Type: application/json
+
+{
+    "email": "logistica@empresa.com",
+    "password": "Logistica123!",
+    "password_confirm": "Logistica123!",
+    "first_name": "Maria",
+    "last_name": "Logística",
+    "cpf": "44444444444",
+    "phone": "11999444444",
+    "role": "logistica"
+}
+
+### Setup 4.2 - Login Logística
+POST {{authURL}}/login/
+Content-Type: application/json
+
+{
+    "email": "logistica@empresa.com",
+    "password": "Logistica123!"
+}
+
+# 🚨 COPIE o access_token para @tokenLogistica
+
+# ==============================================================================
+# 📋 CASO 1: ENTREGA DIRETA COM ÚNICO MOTORISTA
+# ==============================================================================
+# 
+# 🎯 Cenário: Carlos é motorista da transportadora e precisa fazer um 
+# carregamento no CD de São Paulo para entrega em Campinas.
+#
+# Fluxo:
+# 1. Carlos chega ao CD (7:30h)
+# 2. Processo de carregamento (8:00h)
+# 3. Início do transporte (9:15h)
+# 4. Entrega ao cliente (11:30h)
+# 5. Visualização pela equipe de logística
+#
+# ==============================================================================
+
+### CASO 1 - Passo 1: Carlos chega ao CD e registra chegada (7:30h)
+POST {{otsURL}}/
+Authorization: Bearer {{tokenCarlos}}
+Content-Type: application/json
+
+{
+    "cliente_nome": "Empresa ABC",
+    "endereco_entrega": "Rua das Flores, 123 - Centro",
+    "cidade_entrega": "Campinas",
+    "observacoes": "Carregamento CD São Paulo → Campinas",
+    "latitude_origem": -23.5505,
+    "longitude_origem": -46.6333,
+    "endereco_origem": "CD São Paulo - Vila Olímpia"
+}
+
+# 🚨 COPIE o ID da OT para @otCaso1
+# Simulação: 7:30h - Carlos cria OT ao chegar no CD
+# Sistema gera: OT2025042600123
+
+### CASO 1 - Passo 2: Carlos atualiza durante carregamento (8:00h)
+PATCH {{otsURL}}/{{otCaso1}}/
+Authorization: Bearer {{tokenCarlos}}
+Content-Type: application/json
+
+{
+    "observacoes": "Cliente: Empresa ABC | Endereço: Rua das Flores, 123 - Campinas | Tipo: Carga geral",
+    "status": "EM_CARREGAMENTO"
+}
+
+# Simulação: Carlos adiciona mais detalhes enquanto equipe carrega
+
+### CASO 1 - Passo 2.1: Carlos registra início do carregamento
+PATCH {{otsURL}}/{{otCaso1}}/status/
+Authorization: Bearer {{tokenCarlos}}
+Content-Type: application/json
+
+{
+    "status": "EM_CARREGAMENTO",
+    "observacao": "Equipe do CD iniciou carregamento - Carga geral para Empresa ABC"
+}
+
+### CASO 1 - Passo 3: Carlos inicia transporte (9:15h)
+PATCH {{otsURL}}/{{otCaso1}}/status/
+Authorization: Bearer {{tokenCarlos}}
+Content-Type: application/json
+
+{
+    "status": "EM_TRANSITO",
+    "observacao": "Carregamento concluído - Saindo do CD. ETA Campinas: 11:30h via Anhanguera"
+}
+
+# Simulação: Carlos confirma que fará a entrega e registra saída
+
+### CASO 1 - Passo 4: Carlos chega ao cliente e faz entrega (11:30h)
+POST {{otsURL}}/{{otCaso1}}/finalizar/
+Authorization: Bearer {{tokenCarlos}}
+Content-Type: application/json
+
+{
+    "observacoes_entrega": "Entregue ao Sr. Paulo no setor de recebimento. Mercadoria conferida e aceita integralmente.",
+    "latitude_entrega": -22.9068,
+    "longitude_entrega": -47.0626,
+    "endereco_entrega_real": "Empresa ABC - Setor de Recebimento - Portaria Principal"
+}
+
+# Simulação: Carlos finaliza entrega com canhoto assinado
+
+### CASO 1 - Passo 5: Logística visualiza entrega concluída
+GET {{otsURL}}/{{otCaso1}}/
+Authorization: Bearer {{tokenLogistica}}
+Content-Type: application/json
+
+# Simulação: Equipe de logística vê em tempo real que entrega foi concluída
+# Podem acessar detalhes sem esperar retorno físico do documento
+
+### CASO 1 - Verificação: Timeline completa da OT
+GET {{otsURL}}/{{otCaso1}}/
+Authorization: Bearer {{tokenCarlos}}
+Content-Type: application/json
+
+# Verificar se todos os passos foram registrados corretamente
+
+# ==============================================================================
+# 📋 CASO 2: TRANSFERÊNCIA PLANEJADA ENTRE MOTORISTAS
+# ==============================================================================
+#
+# 🎯 Cenário: Sistema de transferência entre veículo maior (José) que não pode 
+# entrar na região central e veículo menor (Antônio) para última milha.
+#
+# Fluxo:
+# 1. José inicia com caminhão grande
+# 2. Cross-docking em terminal urbano (12:00h)
+# 3. Transferência para Antônio (12:30h)
+# 4. Antônio realiza entregas (13:30h - 17:00h)
+# 5. Finalização completa (17:15h)
+#
+# ==============================================================================
+
+### CASO 2 - Passo 1: José chega ao CD com caminhão grande
+POST {{otsURL}}/
+Authorization: Bearer {{tokenJose}}
+Content-Type: application/json
+
+{
+    "cliente_nome": "Rota Centro SP",
+    "endereco_entrega": "Centro de São Paulo - Múltiplas entregas",
+    "cidade_entrega": "São Paulo",
+    "observacoes": "5 entregas centro SP - transferir para van | Zona de restrição para veículos grandes",
+    "latitude_origem": -23.5505,
+    "longitude_origem": -46.6333,
+    "endereco_origem": "CD Principal - São Paulo"
+}
+
+# 🚨 COPIE o ID da OT para @otCaso2
+# Simulação: José cria OT sabendo que será transferida
+
+### CASO 2 - Passo 1.1: José registra carregamento
+PATCH {{otsURL}}/{{otCaso2}}/status/
+Authorization: Bearer {{tokenJose}}
+Content-Type: application/json
+
+{
+    "status": "EM_CARREGAMENTO",
+    "observacao": "Carregando mercadorias para 5 clientes no centro. Planejamento: transferir no terminal urbano."
+}
+
+### CASO 2 - Passo 1.2: José inicia transporte para terminal
+PATCH {{otsURL}}/{{otCaso2}}/status/
+Authorization: Bearer {{tokenJose}}
+Content-Type: application/json
+
+{
+    "status": "EM_TRANSITO",
+    "observacao": "Saindo para terminal urbano - Cross-docking planejado às 12:00h"
+}
+
+### CASO 2 - Passo 2: José chega ao terminal urbano (12:00h)
+POST {{otsURL}}/{{otCaso2}}/transferir/
+Authorization: Bearer {{tokenJose}}
+Content-Type: application/json
+
+{
+    "motorista_destino_id": 3,
+    "motivo": "Transferência planejada - Veículo grande não pode entrar no centro. Transferindo para van.",
+    "latitude": -23.5400,
+    "longitude": -46.6200,
+    "endereco": "Terminal Urbano - Pátio de Cross-docking"
+}
+
+# 🚨 SUBSTITUA "3" pelo ID real do Antônio
+# 🚨 COPIE o ID da transferência para @transferenciaId
+# Simulação: José transfere conforme planejado
+
+### CASO 2 - Passo 3: Antônio verifica transferências pendentes
+GET {{otsURL}}/transferencias/minhas/
+Authorization: Bearer {{tokenAntonio}}
+Content-Type: application/json
+
+# Antônio vê que há uma transferência aguardando sua aceitação
+
+### CASO 2 - Passo 3.1: Antônio aceita a transferência (12:30h)
+POST {{otsURL}}/transferencias/{{transferenciaId}}/aceitar/
+Authorization: Bearer {{tokenAntonio}}
+Content-Type: application/json
+
+{
+    "observacao": "Transferência aceita. Conferindo mercadorias e assumindo responsabilidade pelas 5 entregas no centro."
+}
+
+# Simulação: Antônio confere mercadorias e aceita formalmente
+
+### CASO 2 - Passo 3.2: Verificar que OT agora é do Antônio
+GET {{otsURL}}/{{otCaso2}}/
+Authorization: Bearer {{tokenAntonio}}
+Content-Type: application/json
+
+# Antônio agora é o motorista_atual da OT
+
+### CASO 2 - Passo 4: Antônio inicia entregas no centro (13:30h)
+PATCH {{otsURL}}/{{otCaso2}}/status/
+Authorization: Bearer {{tokenAntonio}}
+Content-Type: application/json
+
+{
+    "status": "EM_TRANSITO",
+    "observacao": "Iniciando rota de entregas no centro. 1ª parada: Rua 25 de Março"
+}
+
+### CASO 2 - Passo 4.1: Antônio registra progresso das entregas
+PATCH {{otsURL}}/{{otCaso2}}/
+Authorization: Bearer {{tokenAntonio}}
+Content-Type: application/json
+
+{
+    "observacoes": "Progresso entregas: Cliente 1 ✓ (13:45h) | Cliente 2 ✓ (14:30h) | Cliente 3 ✓ (15:15h) | Cliente 4 ✓ (16:00h) | Cliente 5 ✓ (16:45h)"
+}
+
+# Simulação: Antônio atualiza conforme realiza cada entrega
+
+### CASO 2 - Passo 5: Antônio finaliza todas as entregas (17:15h)
+POST {{otsURL}}/{{otCaso2}}/finalizar/
+Authorization: Bearer {{tokenAntonio}}
+Content-Type: application/json
+
+{
+    "observacoes_entrega": "Todas as 5 entregas realizadas com sucesso no centro de SP. Todos os canhotos coletados. Operação cross-docking concluída.",
+    "latitude_entrega": -23.5475,
+    "longitude_entrega": -46.6361,
+    "endereco_entrega_real": "Centro SP - Última entrega: Rua Direita, 100"
+}
+
+# Simulação: Antônio finaliza após todas as entregas
+
+### CASO 2 - Verificação: José vê OT finalizada por Antônio
+GET {{otsURL}}/{{otCaso2}}/
+Authorization: Bearer {{tokenJose}}
+Content-Type: application/json
+
+# José pode ver que "sua" OT foi finalizada com sucesso por Antônio
+# Histórico completo mostra toda a operação
+
+### CASO 2 - Verificação: Logística vê operação completa
+GET {{otsURL}}/{{otCaso2}}/
+Authorization: Bearer {{tokenLogistica}}
+Content-Type: application/json
+
+# Logística vê histórico completo:
+# - Criada por José
+# - Transferida para Antônio  
+# - Finalizada por Antônio
+
+# ==============================================================================
+# 📊 COMPARAÇÃO E ANÁLISE DOS CASOS
+# ==============================================================================
+
+### Análise 1: Estatísticas gerais do dia
+GET {{otsURL}}/stats/
+Authorization: Bearer {{tokenLogistica}}
+Content-Type: application/json
+
+# Logística vê estatísticas de ambos os casos
+
+### Análise 2: Histórico de transferências do dia
+GET {{otsURL}}/transferencias/minhas/
+Authorization: Bearer {{tokenLogistica}}
+Content-Type: application/json
+
+# Histórico de todas as transferências realizadas
+
+### Análise 3: Performance por motorista
+GET {{otsURL}}/buscar/?data_inicio=2024-12-06
+Authorization: Bearer {{tokenLogistica}}
+Content-Type: application/json
+
+# Busca todas as OTs do dia para análise
+
+# ==============================================================================
+# 🔄 CENÁRIO ALTERNATIVO: CASO 2 COM RECUSA
+# ==============================================================================
+# 
+# Simulação: E se Antônio não pudesse aceitar a transferência?
+#
+# ==============================================================================
+
+### Alternativo 1: José cria nova OT para teste de recusa
+POST {{otsURL}}/
+Authorization: Bearer {{tokenJose}}
+Content-Type: application/json
+
+{
+    "cliente_nome": "Teste Recusa Transfer",
+    "endereco_entrega": "Endereço de teste",
+    "cidade_entrega": "São Paulo",
+    "observacoes": "OT para testar cenário de recusa"
+}
+
+### Alternativo 2: José tenta transferir para Antônio
+POST {{otsURL}}/NEW_OT_ID/transferir/
+Authorization: Bearer {{tokenJose}}
+Content-Type: application/json
+
+{
+    "motorista_destino_id": 3,
+    "motivo": "Teste de recusa - Antônio pode estar ocupado"
+}
+
+### Alternativo 3: Antônio recusa por estar ocupado
+POST {{otsURL}}/transferencias/NEW_TRANSFER_ID/recusar/
+Authorization: Bearer {{tokenAntonio}}
+Content-Type: application/json
+
+{
+    "observacao": "Não posso aceitar - ainda finalizando entregas da OT anterior. Sem disponibilidade no horário."
+}
+
+### Alternativo 4: Logística faz nova transferência
+POST {{otsURL}}/NEW_OT_ID/transferir/
+Authorization: Bearer {{tokenLogistica}}
+Content-Type: application/json
+
+{
+    "motorista_destino_id": 4,
+    "motivo": "Reagendamento após recusa - Transferindo para outro motorista disponível"
+}
+
+# ==============================================================================
+# 📱 SIMULAÇÃO MOBILE - NOTIFICAÇÕES E ATUALIZAÇÕES
+# ==============================================================================
+
+### Mobile 1: José verifica suas OTs no celular
+GET {{otsURL}}/?status=ENTREGUE
+Authorization: Bearer {{tokenJose}}
+Content-Type: application/json
+
+# Simulação: José verifica no app que suas OTs foram finalizadas
+
+### Mobile 2: Antônio verifica transferências pendentes
+GET {{otsURL}}/transferencias/minhas/
+Authorization: Bearer {{tokenAntonio}}
+Content-Type: application/json
+
+# Simulação: Antônio abre app e vê notificação de transferência
+
+### Mobile 3: Atualização rápida de localização
+PATCH {{otsURL}}/{{otCaso2}}/
+Authorization: Bearer {{tokenAntonio}}
+Content-Type: application/json
+
+{
+    "latitude_origem": -23.5475,
+    "longitude_origem": -46.6361,
+    "endereco_origem": "Centro SP - Em rota de entrega"
+}
+
+# Simulação: App mobile envia localização automaticamente
+
+# ==============================================================================
+# 📋 RELATÓRIO FINAL DOS CASOS
+# ==============================================================================
+
+### Relatório 1: Resumo do Caso 1 (Entrega Direta)
+GET {{otsURL}}/debug/{{otCaso1}}/
+Authorization: Bearer {{tokenLogistica}}
+Content-Type: application/json
+
+# Análise completa da operação de Carlos
+
+### Relatório 2: Resumo do Caso 2 (Transferência Planejada)
+GET {{otsURL}}/debug/{{otCaso2}}/
+Authorization: Bearer {{tokenLogistica}}
+Content-Type: application/json
+
+# Análise completa da operação José → Antônio
+
+### Relatório 3: Comparação de eficiência
+GET {{otsURL}}/stats/
+Authorization: Bearer {{tokenLogistica}}
+Content-Type: application/json
+
+# Métricas para comparar ambos os modelos operacionais
+
+# ==============================================================================
+# 📊 BENEFÍCIOS DEMONSTRADOS
+# ==============================================================================
+
+"""
+✅ CASO 1 - ENTREGA DIRETA:
+- Simplicidade operacional
+- Responsabilidade única (Carlos)
+- Timeline linear e clara
+- Menos pontos de falha
+
+✅ CASO 2 - TRANSFERÊNCIA PLANEJADA:
+- Otimização de recursos (veículos adequados)
+- Especialização por região
+- Maior flexibilidade operacional
+- Melhor aproveitamento da frota
+
+🎯 SISTEMA DE ACEITAÇÃO:
+- Motorista de destino tem controle
+- Evita transferências forçadas
+- Permite reagendamentos
+- Mantém histórico completo
+
+📱 CARACTERÍSTICAS MOBILE:
+- Atualizações em tempo real
+- Notificações de transferência
+- Interface simples para aceitação
+- Tracking automático de localização
+
+🔄 FLEXIBILIDADE:
+- Transferência direta (motorista → motorista)
+- Aprovação da logística (outros casos)
+- Cancelamento a qualquer momento
+- Histórico completo de auditoria
+
+📊 VISIBILIDADE:
+- Logística acompanha tudo
+- Histórico por motorista
+- Métricas de performance
+- Rastreabilidade completa
+"""
