@@ -8,7 +8,7 @@ import Cookies from 'js-cookie';
  */
 
 // URL base da API - use seu IP de desenvolvimento
-const DEVELOPMENT_IP = '192.168.0.2'; // ⚠️ ALTERE para seu IP real
+const DEVELOPMENT_IP = '192.168.0.8'; // ⚠️ ALTERE para seu IP real
 const API_BASE_URL = process.env.NODE_ENV === 'development' 
   ? `http://${DEVELOPMENT_IP}:8000/api`
   : process.env.NEXT_PUBLIC_API_URL || 'https://api.logitrack.com/api';

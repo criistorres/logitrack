@@ -1,4 +1,4 @@
-// App.tsx - VERSÃO ULTRA SIMPLIFICADA QUE FUNCIONA
+// mobile/App.tsx - VERSÃO CORRIGIDA SEM ERROS
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -9,9 +9,10 @@ import './global.css';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import HomeScreen from './src/screens/HomeScreen';
 import { ForgotPasswordScreen, LoginScreen, RegisterScreen } from './src/screens/auth';
+import { CriarOTScreen } from './src/screens/ots';
 
 // ==============================================================================
-// 📋 TIPOS UNIFICADOS
+// 📋 TIPOS DE NAVEGAÇÃO
 // ==============================================================================
 
 type AppStackParamList = {
@@ -19,12 +20,13 @@ type AppStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   Home: undefined;
+  CriarOT: undefined;
 };
 
 const Stack = createStackNavigator<AppStackParamList>();
 
 // ==============================================================================
-// 🗺️ NAVIGATOR ÚNICO E SIMPLES
+// 🗺️ NAVIGATOR - ESTRUTURA LIMPA
 // ==============================================================================
 
 function AppContent() {
@@ -35,25 +37,12 @@ function AppContent() {
   // Loading screen
   if (isLoading) {
     return (
-      <View style={{ 
-        flex: 1, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        backgroundColor: 'white' 
-      }}>
-        <View style={{ 
-          width: 80, 
-          height: 80, 
-          backgroundColor: '#3b82f6', 
-          borderRadius: 40, 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          marginBottom: 20
-        }}>
-          <Text style={{ color: 'white', fontSize: 30 }}>🚛</Text>
+      <View className="flex-1 justify-center items-center bg-white">
+        <View className="w-20 h-20 bg-blue-500 rounded-full justify-center items-center mb-5">
+          <Text className="text-white text-3xl">🚛</Text>
         </View>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 8 }}>LogiTrack</Text>
-        <Text style={{ color: '#666', marginBottom: 20 }}>Carregando...</Text>
+        <Text className="text-2xl font-bold mb-2">LogiTrack</Text>
+        <Text className="text-gray-600 mb-5">Carregando...</Text>
         <ActivityIndicator size="large" color="#3b82f6" />
       </View>
     );
@@ -67,10 +56,11 @@ function AppContent() {
       }}
     >
       {isAuthenticated ? (
-        // Usuário autenticado - apenas Home por enquanto
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="CriarOT" component={CriarOTScreen} />
+        </>
       ) : (
-        // Usuário não autenticado - telas de auth
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
@@ -82,14 +72,14 @@ function AppContent() {
 }
 
 // ==============================================================================
-// 🚀 APP PRINCIPAL - ESTRUTURA MÍNIMA
+// 🚀 APP PRINCIPAL
 // ==============================================================================
 
 export default function App() {
-  console.log('🚀 App: Inicializando versão ultra simplificada...');
+  console.log('🚀 App: Inicializando LogiTrack...');
   
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView className="flex-1">
       <NavigationContainer>
         <AuthProvider>
           <AppContent />

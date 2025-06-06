@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.tsx
+// mobile/src/contexts/AuthContext.tsx - VERSÃO COM VALIDAÇÃO MELHORADA
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
@@ -26,6 +26,7 @@ interface AuthContextData {
   // Utilitários
   refreshUserData: () => Promise<void>;
   checkAuthStatus: () => Promise<void>;
+  validateToken: () => Promise<boolean>; // 🆕 Nova função
 }
 
 interface RegisterData {
@@ -118,9 +119,68 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isAuthenticated = !!user;
   
   // ==============================================================================
-  // 🔄 VERIFICAR STATUS DE AUTENTICAÇÃO NO INÍCIO
+  // 🆕 VALIDAÇÃO REAL DO TOKEN COM A API
   // ==============================================================================
-  const DEVELOPMENT_IP = '192.168.0.2'
+  
+  const validateToken = async (): Promise<boolean> => {
+    try {
+      console.log('🔍 AuthContext: Validando token com a API...');
+      
+      // Buscar token do storage
+      const token = await AsyncStorage.getItem('@LogiTrack:token');
+      
+      if (!token) {
+        console.log('❌ AuthContext: Nenhum token encontrado');
+        return false;
+      }
+      
+      // Fazer chamada para API para validar token
+      const DEVELOPMENT_IP = '192.168.0.2'; // Ajuste conforme seu IP
+      const response = await fetch(`http://${DEVELOPMENT_IP}:8000/api/auth/user/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('✅ AuthContext: Token válido, dados do usuário atualizados');
+        
+        // Atualizar dados do usuário se necessário
+        if (userData.email) {
+          setUser(userData);
+        }
+        
+        return true;
+      } else {
+        console.log('❌ AuthContext: Token inválido ou expirado');
+        
+        // Se o token for inválido, limpar dados
+        await AsyncStorage.multiRemove([
+          '@LogiTrack:token',
+          '@LogiTrack:refreshToken',
+          '@LogiTrack:user'
+        ]);
+        
+        setUser(null);
+        return false;
+      }
+      
+    } catch (error) {
+      console.error('❌ AuthContext: Erro ao validar token:', error);
+      
+      // Em caso de erro de rede, manter usuário logado se já estava
+      // mas marcar como não validado
+      return false;
+    }
+  };
+  
+  // ==============================================================================
+  // 🔄 VERIFICAR STATUS DE AUTENTICAÇÃO NO INÍCIO (MELHORADO)
+  // ==============================================================================
+  
   useEffect(() => {
     checkAuthStatus();
   }, []);
@@ -130,25 +190,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🔍 AuthContext: Verificando status de autenticação...');
       setIsLoading(true);
       
-      // Verificar se há token armazenado
-      const isAuth = await authService.isAuthenticated();
-      console.log(`🔍 AuthContext: Token encontrado: ${isAuth}`);
+      // Primeiro verificar se há dados salvos localmente
+      const [token, refreshToken, userDataString] = await AsyncStorage.multiGet([
+        '@LogiTrack:token',
+        '@LogiTrack:refreshToken',
+        '@LogiTrack:user'
+      ]);
       
-      if (isAuth) {
-        // Buscar dados do usuário
-        const userData = await authService.getCurrentUser();
-        console.log(`🔍 AuthContext: Dados do usuário: ${userData?.email}`);
-        
-        if (userData) {
-          setUser(userData);
-          console.log('✅ AuthContext: Usuário autenticado automaticamente');
+      if (!token[1]) {
+        console.log('ℹ️ AuthContext: Nenhum token encontrado - usuário não autenticado');
+        return;
+      }
+      
+      // Se há token, validar se ainda é válido
+      console.log('🔍 AuthContext: Token encontrado, validando com API...');
+      const isValid = await validateToken();
+      
+      if (isValid) {
+        // Se o token é válido mas não temos dados do usuário local,
+        // buscar da API
+        if (!userDataString[1]) {
+          console.log('🔄 AuthContext: Buscando dados do usuário da API...');
+          const userData = await authService.getCurrentUser();
+          
+          if (userData) {
+            setUser(userData);
+            console.log('✅ AuthContext: Dados do usuário carregados da API');
+          }
         } else {
-          console.log('❌ AuthContext: Token inválido, fazendo logout');
-          await logout();
+          // Usar dados locais (já foram atualizados no validateToken)
+          const localUser = JSON.parse(userDataString[1]);
+          if (!user) { // Só atualizar se ainda não tiver carregado
+            setUser(localUser);
+          }
+          console.log('✅ AuthContext: Usuário autenticado automaticamente');
         }
       } else {
-        console.log('ℹ️ AuthContext: Usuário não autenticado');
+        console.log('❌ AuthContext: Token inválido, fazendo logout');
+        await logout();
       }
+      
     } catch (error) {
       console.error('❌ AuthContext: Erro ao verificar status de auth:', error);
       await logout(); // Limpar qualquer token inválido
@@ -168,12 +249,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       setIsLoading(true);
       
-      // 🔧 CORREÇÃO: Usar authService que já está configurado corretamente
+      // Usar authService que já está configurado corretamente
       const response = await authService.login(credentials);
       console.log('🔐 AuthContext: Resposta do authService:', response);
       
-      // ✅ authService já salva os tokens automaticamente no AsyncStorage
-      // ✅ Apenas atualizar o estado local
+      // authService já salva os tokens automaticamente no AsyncStorage
+      // Apenas atualizar o estado local
       setUser(response.user);
       
       console.log(`✅ AuthContext: Usuário logado: ${response.user.email}`);
@@ -219,7 +300,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
   
   // ==============================================================================
-  // 📝 MÉTODO DE REGISTRO
+  // 📝 MÉTODO DE REGISTRO (CORRIGIDO)
   // ==============================================================================
   
   const register = async (data: RegisterData): Promise<RegisterResponse> => {
@@ -230,53 +311,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       setIsLoading(true);
       
-      // Preparar dados para API
-      const registerData = {
-        ...data,
-        // Garantir que campos de CNH estejam presentes se for motorista
-        ...(data.role === 'motorista' && {
-          cnh_numero: data.cnh_numero || '',
-          cnh_categoria: data.cnh_categoria || 'B',
-          cnh_validade: data.cnh_validade || ''
-        })
-      };
+      // 🎯 CORREÇÃO: Usar authService ao invés de fetch direto
+      const response = await authService.register(data);
+      console.log('📝 AuthContext: Resposta do authService:', response);
       
-      // Chamar API de registro
-      const response = await fetch(`http://${DEVELOPMENT_IP}:8000/api/auth/register/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(registerData),
-      });
-      
-      const result = await response.json();
-      console.log('📝 AuthContext: Resposta da API:', result);
-      
-      if (result.success && result.data) {
+      if (response.success && response.data) {
         console.log('✅ AuthContext: Registro bem-sucedido');
         
-        // Salvar tokens
-        await AsyncStorage.multiSet([
-          ['@LogiTrack:token', result.data.tokens.access],
-          ['@LogiTrack:refreshToken', result.data.tokens.refresh],
-          ['@LogiTrack:user', JSON.stringify(result.data.user)],
-        ]);
-        
-        // Atualizar estado
-        setUser(result.data.user);
+        // authService já salvou os tokens automaticamente
+        // Apenas atualizar o estado local
+        setUser(response.data.user);
         
         return {
           success: true,
           message: 'Conta criada com sucesso!',
-          data: result.data
+          data: response.data
         };
       } else {
-        console.log('❌ AuthContext: Erro no registro:', result);
+        console.log('❌ AuthContext: Erro no registro:', response);
         return {
           success: false,
-          message: result.message || 'Erro ao criar conta',
-          errors: result.errors || {}
+          message: response.message || 'Erro ao criar conta',
+          errors: response.errors || {}
         };
       }
       
@@ -293,7 +349,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
   
   // ==============================================================================
-  // 🚪 MÉTODO DE LOGOUT
+  // 🚪 MÉTODO DE LOGOUT (MELHORADO)
   // ==============================================================================
   
   const logout = async (): Promise<void> => {
@@ -324,6 +380,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🔄 AuthContext: Solicitando reset de senha...');
       console.log(`🔄 Email: ${email}`);
       
+      const DEVELOPMENT_IP = '192.168.0.2'; // Ajuste conforme seu IP
       const response = await fetch(`http://${DEVELOPMENT_IP}:8000/api/auth/password/reset/`, {
         method: 'POST',
         headers: {
@@ -355,6 +412,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🔄 AuthContext: Confirmando reset de senha...');
       console.log(`🔄 Código: ${data.code}`);
       
+      const DEVELOPMENT_IP = '192.168.0.2'; // Ajuste conforme seu IP
       const response = await fetch(`http://${DEVELOPMENT_IP}:8000/api/auth/password/confirm/`, {
         method: 'POST',
         headers: {
@@ -418,6 +476,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     confirmPasswordReset,
     refreshUserData,
     checkAuthStatus,
+    validateToken, // 🆕 Nova função
   };
   
   return (

@@ -8,7 +8,7 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
  * Em desenvolvimento aponta para localhost
  * Em produção deve apontar para o servidor real
  */
-const DEVELOPMENT_IP = '192.168.0.2'
+const DEVELOPMENT_IP = '192.168.0.8'
 const API_BASE_URL = __DEV__ 
   ? `http://${DEVELOPMENT_IP}:8000/api`  // ← IP da rede local + /api
   : 'https://api.logitrack.com/api';

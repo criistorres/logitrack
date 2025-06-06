@@ -24,6 +24,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "LogiTrack precisa acessar sua localização para registrar o ponto de coleta das OTs."
+        }
+      ]
+    ]
+    
   }
 }

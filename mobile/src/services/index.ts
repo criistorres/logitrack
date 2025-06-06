@@ -1,14 +1,37 @@
-// src/services/index.ts
+// mobile/src/services/index.ts - VERSÃO ATUALIZADA COMPLETA
 
-/**
- * Arquivo de exportação central para todos os serviços
- */
+// ==============================================================================
+// 📦 EXPORTS DOS SERVIÇOS
+// ==============================================================================
 
-// API base
+// Serviço de API base
 export { default as api, apiService } from './api';
 
-// Serviços específicos
+// Serviço de autenticação
 export { default as authService } from './authService';
 
-// Tipos
-export type { LoginCredentials, LoginResponse, User } from './authService';
+// 🆕 Serviço de Ordens de Transporte
+export { default as otService } from './otService';
+
+// ==============================================================================
+// 📋 TIPOS EXPORTADOS
+// ==============================================================================
+
+// Tipos de autenticação (atualizados)
+export type { 
+  LoginCredentials, 
+  LoginResponse,
+  RegisterData,
+  RegisterResponse,
+  User 
+} from './authService';
+
+// 🆕 Tipos de OTs
+export type { 
+  CriarOTRequest,
+  OT,
+  CriarOTResponse,
+  ListarOTsResponse,
+  DetalhesOTResponse,
+  AtualizarStatusRequest
+} from './otService';

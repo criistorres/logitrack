@@ -1,4 +1,4 @@
-// src/services/authService.ts
+// mobile/src/services/authService.ts - VERSÃO COMPLETA COM REGISTER
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiService } from './api';
@@ -9,6 +9,20 @@ import { apiService } from './api';
 export interface LoginCredentials {
   email: string;
   password: string;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  password_confirm: string;
+  first_name: string;
+  last_name: string;
+  cpf: string;
+  phone?: string;
+  role: 'motorista' | 'logistica' | 'admin';
+  cnh_numero?: string;
+  cnh_categoria?: string;
+  cnh_validade?: string;
 }
 
 export interface LoginResponse {
@@ -24,6 +38,19 @@ export interface LoginResponse {
   };
 }
 
+export interface RegisterResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    user: User;
+    tokens: {
+      access: string;
+      refresh: string;
+    };
+  };
+  errors?: any;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -37,7 +64,7 @@ export interface User {
 
 /**
  * Serviço de Autenticação
- * Gerencia login, logout e tokens
+ * Gerencia login, logout, register e tokens
  */
 class AuthService {
   /**
@@ -45,11 +72,12 @@ class AuthService {
    */
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
+      console.log('🔐 AuthService: Fazendo login via API...');
       const response = await apiService.post<any>('/auth/login/', credentials);
       
       console.log('🔐 AuthService: Resposta completa da API:', response.data);
       
-      // ✅ CORREÇÃO: Extrair tokens da estrutura correta da API
+      // Extrair tokens da estrutura correta da API
       const { data } = response.data; // Primeira camada
       const { user, tokens } = data;   // Segunda camada
       
@@ -58,8 +86,8 @@ class AuthService {
       
       // Salvar tokens no AsyncStorage
       await AsyncStorage.multiSet([
-        ['@LogiTrack:token', tokens.access],           // ✅ Usar tokens.access
-        ['@LogiTrack:refreshToken', tokens.refresh],   // ✅ Usar tokens.refresh
+        ['@LogiTrack:token', tokens.access],
+        ['@LogiTrack:refreshToken', tokens.refresh],
         ['@LogiTrack:user', JSON.stringify(user)],
       ]);
       
@@ -77,11 +105,93 @@ class AuthService {
       throw error;
     }
   }
+
+  /**
+   * 🆕 Realizar registro
+   */
+  async register(data: RegisterData): Promise<RegisterResponse> {
+    try {
+      console.log('📝 AuthService: Fazendo registro via API...');
+      console.log('📝 AuthService: Dados enviados:', {
+        email: data.email,
+        role: data.role,
+        first_name: data.first_name,
+        last_name: data.last_name
+      });
+      
+      // Preparar dados para API
+      const registerData = {
+        ...data,
+        // Garantir que campos de CNH estejam presentes se for motorista
+        ...(data.role === 'motorista' && {
+          cnh_numero: data.cnh_numero || '',
+          cnh_categoria: data.cnh_categoria || 'B',
+          cnh_validade: data.cnh_validade || ''
+        })
+      };
+      
+      console.log('📝 AuthService: Dados formatados para API:', registerData);
+      
+      // 🎯 USAR APISERVICE AO INVÉS DE FETCH DIRETO
+      const response = await apiService.post<any>('/auth/register/', registerData);
+      
+      console.log('📝 AuthService: Resposta completa da API:', response.data);
+      
+      // Verificar se foi sucesso
+      if (response.data.success && response.data.data) {
+        console.log('✅ AuthService: Registro bem-sucedido');
+        
+        const { user, tokens } = response.data.data;
+        
+        // Salvar tokens automaticamente
+        await AsyncStorage.multiSet([
+          ['@LogiTrack:token', tokens.access],
+          ['@LogiTrack:refreshToken', tokens.refresh],
+          ['@LogiTrack:user', JSON.stringify(user)],
+        ]);
+        
+        console.log('✅ AuthService: Tokens do registro salvos no AsyncStorage');
+        
+        return {
+          success: true,
+          message: 'Conta criada com sucesso!',
+          data: response.data.data
+        };
+      } else {
+        console.log('❌ AuthService: Erro no registro:', response.data);
+        return {
+          success: false,
+          message: response.data.message || 'Erro ao criar conta',
+          errors: response.data.errors || {}
+        };
+      }
+      
+    } catch (error: any) {
+      console.error('❌ AuthService: Erro no registro:', error);
+      
+      // Tratar diferentes tipos de erro
+      if (error.response?.data) {
+        return {
+          success: false,
+          message: error.response.data.message || 'Erro ao criar conta',
+          errors: error.response.data.errors || {}
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Erro de conexão. Tente novamente.',
+          errors: { network: ['Erro de rede'] }
+        };
+      }
+    }
+  }
+
   /**
    * Realizar logout
    */
   async logout(): Promise<void> {
     try {
+      console.log('🚪 AuthService: Fazendo logout...');
       // Chamar endpoint de logout (se existir)
       await apiService.post('/auth/logout/');
     } catch (error) {
@@ -93,6 +203,7 @@ class AuthService {
         '@LogiTrack:refreshToken',
         '@LogiTrack:user',
       ]);
+      console.log('✅ AuthService: Dados locais limpos');
     }
   }
   
