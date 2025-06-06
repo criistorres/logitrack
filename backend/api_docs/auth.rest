@@ -344,7 +344,7 @@ Content-Type: application/json
 
 ### 11.1 Listar todos os usuários (requer logística/admin)
 GET {{authURL}}/users/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SEU_TOKEN_AQUI
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTgwOTE2LCJpYXQiOjE3NDkxNzczMTYsImp0aSI6ImQ5OTdkYmFiMzNkOTQ3ODQ5NDZkN2RlODcxNjAzZWY4IiwidXNlcl9pZCI6N30.k8UcjPXYO1F4eOb5oOiwNoLsvN2CvdVbyJ6m5azJvRA
 Content-Type: application/json
 
 # 🚨 SUBSTITUA pelo token de um usuário logística ou admin!
@@ -355,8 +355,8 @@ Content-Type: application/json
 # - Lista de usuários (logística não vê admins)
 
 ### 11.2 Ver detalhes de um usuário específico
-GET {{authURL}}/users/1/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SEU_TOKEN_AQUI
+GET {{authURL}}/users/6/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTgwOTE2LCJpYXQiOjE3NDkxNzczMTYsImp0aSI6ImQ5OTdkYmFiMzNkOTQ3ODQ5NDZkN2RlODcxNjAzZWY4IiwidXNlcl9pZCI6N30.k8UcjPXYO1F4eOb5oOiwNoLsvN2CvdVbyJ6m5azJvRA
 Content-Type: application/json
 
 # Esperado:

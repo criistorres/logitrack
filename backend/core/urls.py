@@ -1,9 +1,9 @@
 # ==============================================================================
-# URLs DO CORE - ORDENS DE TRANSPORTE
+# URLs DO CORE - ORDENS DE TRANSPORTE (VERSÃO CORRIGIDA)
 # ==============================================================================
 
 # Arquivo: backend/core/urls.py
-# CRIE este arquivo na pasta core/
+# SUBSTITUA COMPLETAMENTE o conteúdo do arquivo core/urls.py
 
 from django.urls import path
 from .views import (
@@ -51,6 +51,12 @@ AÇÕES ESPECÍFICAS:
 - PATCH  /api/ots/{id}/status/         → AtualizarStatusOTView
 - POST   /api/ots/{id}/finalizar/      → FinalizarOTView
 - POST   /api/ots/{id}/arquivos/       → UploadArquivoOTView
+
+TRANSFERÊNCIAS:
+- GET    /api/ots/transferencias/minhas/                → MinhasTransferenciasView
+- POST   /api/ots/transferencias/{id}/aceitar/         → AceitarTransferenciaView
+- POST   /api/ots/transferencias/{id}/recusar/         → RecusarTransferenciaView
+- POST   /api/ots/transferencias/{id}/cancelar/        → CancelarTransferenciaView
 
 BUSCA E RELATÓRIOS:
 - GET    /api/ots/buscar/              → BuscarOTView
@@ -120,6 +126,38 @@ urlpatterns = [
     # POST /api/ots/{id}/arquivos/ - Upload de arquivos (canhotos, fotos, etc)
     
     # ==============================================================================
+    # 🔄 ENDPOINTS DE TRANSFERÊNCIAS
+    # ==============================================================================
+    
+    path(
+        'transferencias/minhas/',
+        MinhasTransferenciasView.as_view(),
+        name='minhas_transferencias'
+    ),
+    # GET /api/ots/transferencias/minhas/ - Lista transferências do usuário
+    
+    path(
+        'transferencias/<int:pk>/aceitar/',
+        AceitarTransferenciaView.as_view(),
+        name='aceitar_transferencia'
+    ),
+    # POST /api/ots/transferencias/{id}/aceitar/ - Aceitar transferência
+    
+    path(
+        'transferencias/<int:pk>/recusar/',
+        RecusarTransferenciaView.as_view(),
+        name='recusar_transferencia'
+    ),
+    # POST /api/ots/transferencias/{id}/recusar/ - Recusar transferência
+    
+    path(
+        'transferencias/<int:pk>/cancelar/',
+        CancelarTransferenciaView.as_view(),
+        name='cancelar_transferencia'
+    ),
+    # POST /api/ots/transferencias/{id}/cancelar/ - Cancelar transferência
+    
+    # ==============================================================================
     # 🔍 ENDPOINTS DE BUSCA E RELATÓRIOS
     # ==============================================================================
     
@@ -165,115 +203,34 @@ urlpatterns = [
 ]
 
 # ==============================================================================
-# 📝 DOCUMENTAÇÃO DOS ENDPOINTS
+# 📝 DOCUMENTAÇÃO RÁPIDA DOS ENDPOINTS
 # ==============================================================================
 
 """
-🎯 GUIA DE USO DOS ENDPOINTS:
+🚀 COMO TESTAR:
 
-1. **CRIAR OT:**
+1. **Criar OT:**
    POST /api/ots/
-   Headers: Authorization: Bearer <token>
-   Body: {
-       "cliente_nome": "Empresa ABC",
-       "endereco_entrega": "Rua das Flores, 123",
-       "cidade_entrega": "São Paulo",
-       "observacoes": "Entrega urgente",
-       "latitude_origem": -23.5505,
-       "longitude_origem": -46.6333
-   }
+   Body: {"cliente_nome": "ABC", "endereco_entrega": "Rua X", "cidade_entrega": "SP"}
 
-2. **LISTAR OTs:**
-   GET /api/ots/
-   Headers: Authorization: Bearer <token>
-   Query params opcionais: ?status=EM_TRANSITO&motorista=123
+2. **Transferir OT:**
+   POST /api/ots/1/transferir/
+   Body: {"motorista_destino_id": 2, "motivo": "Problema mecânico"}
 
-3. **VER DETALHES:**
-   GET /api/ots/123/
-   Headers: Authorization: Bearer <token>
+3. **Ver transferências:**
+   GET /api/ots/transferencias/minhas/
 
-4. **ATUALIZAR OT:**
-   PATCH /api/ots/123/
-   Headers: Authorization: Bearer <token>
-   Body: {
-       "observacoes": "Nova observação",
-       "status": "EM_TRANSITO"
-   }
+4. **Aceitar transferência:**
+   POST /api/ots/transferencias/1/aceitar/
+   Body: {"observacao": "Aceito a transferência"}
 
-5. **TRANSFERIR OT:**
-   POST /api/ots/123/transferir/
-   Headers: Authorization: Bearer <token>
-   Body: {
-       "motorista_destino_id": 456,
-       "motivo": "Veículo quebrou",
-       "latitude": -23.5505,
-       "longitude": -46.6333
-   }
+5. **Finalizar OT:**
+   POST /api/ots/1/finalizar/
+   Body: {"observacoes_entrega": "Entregue com sucesso"}
 
-6. **ATUALIZAR STATUS:**
-   PATCH /api/ots/123/status/
-   Headers: Authorization: Bearer <token>
-   Body: {
-       "status": "EM_TRANSITO",
-       "observacao": "Saindo do CD"
-   }
-
-7. **FINALIZAR OT:**
-   POST /api/ots/123/finalizar/
-   Headers: Authorization: Bearer <token>
-   Body: {
-       "observacoes_entrega": "Entregue ao Sr. João",
-       "latitude_entrega": -23.5505,
-       "longitude_entrega": -46.6333,
-       "endereco_entrega_real": "Portaria principal"
-   }
-
-8. **UPLOAD DE ARQUIVO:**
-   POST /api/ots/123/arquivos/
-   Headers: Authorization: Bearer <token>
-   Form Data:
-       arquivo: <file>
-       tipo: "CANHOTO"
-       descricao: "Canhoto assinado"
-
-9. **BUSCAR OTs:**
-   GET /api/ots/buscar/?numero_ot=OT20250426001
-   GET /api/ots/buscar/?cliente_nome=Empresa
-   GET /api/ots/buscar/?status=EM_TRANSITO
-   Headers: Authorization: Bearer <token>
-
-10. **ESTATÍSTICAS:**
-    GET /api/ots/stats/
-    Headers: Authorization: Bearer <token>
-
-🔐 PERMISSÕES POR ENDPOINT:
-
-- **Motoristas**: Podem criar, ver suas próprias OTs, transferir, atualizar status, upload arquivos
-- **Logística**: Podem ver todas as OTs, aprovar transferências, relatórios completos
-- **Admin**: Podem tudo
-
-🚨 CÓDIGOS DE RESPOSTA:
-
-- **200 OK**: Operação bem-sucedida
-- **201 Created**: Recurso criado (OT, transferência, arquivo)
-- **400 Bad Request**: Dados inválidos
-- **401 Unauthorized**: Token inválido/ausente
-- **403 Forbidden**: Sem permissão para esta ação
-- **404 Not Found**: OT não encontrada
-- **500 Internal Server Error**: Erro interno (veja logs)
-
-🎯 COMO TESTAR:
-
-1. Use a documentação .rest que será criada
-2. Teste com diferentes tipos de usuário
-3. Verifique logs no terminal Django
-4. Use endpoints de debug para troubleshooting
-
-📱 PRÓXIMOS PASSOS:
-
-Após testar estes endpoints, implementaremos:
-- Interface mobile React Native
-- Dashboard web Next.js
-- Notificações push
-- Relatórios avançados
+📋 PRÓXIMOS PASSOS:
+1. Aplicar esta correção
+2. Corrigir o modelo TransferenciaOT  
+3. Fazer as migrações
+4. Testar endpoints
 """

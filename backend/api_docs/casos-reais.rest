@@ -20,15 +20,15 @@
 @otsURL = {{baseURL}}/api/ots
 
 # Tokens de usuários
-@tokenCarlos = 
-@tokenJose = 
-@tokenAntonio = 
-@tokenLogistica = 
+@tokenCarlos = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTgwNzM1LCJpYXQiOjE3NDkxNzcxMzUsImp0aSI6Ijg3MzM5Mzk3NWYxZTQ2ZTNhOGU4ZDYyMDU0ZTlmOGI4IiwidXNlcl9pZCI6NH0.Qrf8TyLhmThbUg3b3rLYLb8wsyzWpuO_0-RmW_aPAaE
+@tokenJose = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTgwODE4LCJpYXQiOjE3NDkxNzcyMTgsImp0aSI6ImZiMDIzOWU2MGI4ZDQ1MGU4Y2M2YzcyNmZjOWViYTFiIiwidXNlcl9pZCI6NX0.q__uV4jMtMnrOb0u2y2OtSO7GJJ9rq3d1Oh89n7wveY
+@tokenAntonio = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTgwODg2LCJpYXQiOjE3NDkxNzcyODYsImp0aSI6ImYyY2FhNThkMGJmMDQ5YmI5YzM2MWNkMDRjZjAwYjM4IiwidXNlcl9pZCI6Nn0.5GxqDTkGCKzDKLN3PYF5cySMt7TOyGCtMex9zh9KtEY
+@tokenLogistica = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTgwOTE2LCJpYXQiOjE3NDkxNzczMTYsImp0aSI6ImQ5OTdkYmFiMzNkOTQ3ODQ5NDZkN2RlODcxNjAzZWY4IiwidXNlcl9pZCI6N30.k8UcjPXYO1F4eOb5oOiwNoLsvN2CvdVbyJ6m5azJvRA
 
 # IDs dinâmicos
-@otCaso1 = 
-@otCaso2 = 
-@transferenciaId = 
+@otCaso1 = 9
+@otCaso2 = 10
+@transferenciaId = 6
 
 # ==============================================================================
 # 🔐 CONFIGURAÇÃO INICIAL - CRIAR/LOGAR USUÁRIOS
@@ -305,7 +305,7 @@ Authorization: Bearer {{tokenJose}}
 Content-Type: application/json
 
 {
-    "motorista_destino_id": 3,
+    "motorista_destino_id": 6,
     "motivo": "Transferência planejada - Veículo grande não pode entrar no centro. Transferindo para van.",
     "latitude": -23.5400,
     "longitude": -46.6200,
@@ -440,17 +440,17 @@ Content-Type: application/json
 }
 
 ### Alternativo 2: José tenta transferir para Antônio
-POST {{otsURL}}/NEW_OT_ID/transferir/
+POST {{otsURL}}/11/transferir/
 Authorization: Bearer {{tokenJose}}
 Content-Type: application/json
 
 {
-    "motorista_destino_id": 3,
+    "motorista_destino_id": 6,
     "motivo": "Teste de recusa - Antônio pode estar ocupado"
 }
 
 ### Alternativo 3: Antônio recusa por estar ocupado
-POST {{otsURL}}/transferencias/NEW_TRANSFER_ID/recusar/
+POST {{otsURL}}/transferencias/9/recusar/
 Authorization: Bearer {{tokenAntonio}}
 Content-Type: application/json
 
@@ -459,7 +459,7 @@ Content-Type: application/json
 }
 
 ### Alternativo 4: Logística faz nova transferência
-POST {{otsURL}}/NEW_OT_ID/transferir/
+POST {{otsURL}}/11/transferir/
 Authorization: Bearer {{tokenLogistica}}
 Content-Type: application/json
 
