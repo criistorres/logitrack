@@ -123,15 +123,25 @@ class OrdemTransporteDetailSerializer(serializers.ModelSerializer):
     motorista_atual = SimpleUserSerializer(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     
-    # Propriedades calculadas
+    # Propriedades calculadas EXISTENTES
     pode_ser_editada = serializers.ReadOnlyField()
     pode_ser_transferida = serializers.ReadOnlyField()
     esta_finalizada = serializers.ReadOnlyField()
+    
+    # 🔧 NOVAS PROPRIEDADES para validação de finalização
+    pode_ser_finalizada = serializers.ReadOnlyField()
+    motivo_nao_finalizar = serializers.ReadOnlyField()
+    tem_canhoto = serializers.ReadOnlyField()
+    tem_foto_entrega = serializers.ReadOnlyField()
     
     # Relacionamentos
     arquivos = serializers.SerializerMethodField()
     transferencias = serializers.SerializerMethodField()
     atualizacoes_recentes = serializers.SerializerMethodField()
+    
+    # 🔧 NOVOS CAMPOS para estatísticas de arquivos
+    arquivos_count = serializers.SerializerMethodField()
+    arquivos_por_tipo = serializers.SerializerMethodField()
     
     class Meta:
         model = OrdemTransporte
@@ -144,13 +154,30 @@ class OrdemTransporteDetailSerializer(serializers.ModelSerializer):
             'latitude_entrega', 'longitude_entrega', 'endereco_entrega_real',
             'motorista_criador', 'motorista_atual',
             'pode_ser_editada', 'pode_ser_transferida', 'esta_finalizada',
-            'arquivos', 'transferencias', 'atualizacoes_recentes'
+            'pode_ser_finalizada', 'motivo_nao_finalizar',  # 🔧 NOVOS
+            'tem_canhoto', 'tem_foto_entrega',              # 🔧 NOVOS
+            'arquivos', 'arquivos_count', 'arquivos_por_tipo',  # 🔧 NOVOS
+            'transferencias', 'atualizacoes_recentes'
         ]
     
     def get_arquivos(self, obj):
         """Retorna arquivos da OT."""
         arquivos = obj.arquivos.all()[:10]  # Últimos 10 arquivos
         return ArquivoSerializer(arquivos, many=True).data
+    
+    def get_arquivos_count(self, obj):
+        """🔧 NOVO: Retorna quantidade de arquivos por tipo."""
+        return obj.arquivos.count()
+    
+    def get_arquivos_por_tipo(self, obj):
+        """🔧 NOVO: Retorna arquivos agrupados por tipo."""
+        arquivos_por_tipo = {}
+        for arquivo in obj.arquivos.all():
+            tipo = arquivo.get_tipo_display()
+            if tipo not in arquivos_por_tipo:
+                arquivos_por_tipo[tipo] = 0
+            arquivos_por_tipo[tipo] += 1
+        return arquivos_por_tipo
     
     def get_transferencias(self, obj):
         """Retorna transferências da OT."""
@@ -210,23 +237,38 @@ class OrdemTransporteUpdateSerializer(serializers.ModelSerializer):
         """
         print(f"🚚 UPDATE OT: Atualizando {instance.numero_ot}")
         print(f"🚚 Dados novos: {validated_data}")
+        print(f"🚚 Status atual: {instance.status}")
         
-        # Verificar se há mudança de status
+        # 🔧 CORREÇÃO: Verificar se há mudança de status REAL
         novo_status = validated_data.get('status')
         if novo_status and novo_status != instance.status:
             print(f"🚚 Mudança de status detectada: {instance.status} → {novo_status}")
             
             # Usar método do modelo para atualizar status
-            validated_data.pop('status')  # Remover para não duplicar
+            validated_data_copy = validated_data.copy()
+            validated_data_copy.pop('status')  # Remover para não duplicar
             
             # Atualizar outros campos primeiro
-            for attr, value in validated_data.items():
+            for attr, value in validated_data_copy.items():
                 setattr(instance, attr, value)
             instance.save()
             
             # Atualizar status com validação e log
             user = self.context['request'].user
-            instance.atualizar_status(novo_status, user)
+            observacao = validated_data.get('observacao', '')
+            instance.atualizar_status(novo_status, user, observacao)
+            
+        elif novo_status and novo_status == instance.status:
+            # 🔧 CORREÇÃO: Se status é igual, não tentar atualizar status
+            print(f"⚠️ Status já é {novo_status}, apenas atualizando outros campos")
+            validated_data_copy = validated_data.copy()
+            validated_data_copy.pop('status')  # Remover status duplicado
+            
+            # Atualizar apenas outros campos
+            for attr, value in validated_data_copy.items():
+                setattr(instance, attr, value)
+            instance.save()
+            
         else:
             # Atualização normal sem mudança de status
             for attr, value in validated_data.items():

@@ -501,6 +501,8 @@ class FinalizarOTView(APIView, OTPermissionMixin):
         """
         Finaliza OT como entregue.
         
+        🔧 NOVA VALIDAÇÃO: Verifica se há arquivos anexados
+        
         Body esperado:
         {
             "observacoes_entrega": "Entregue ao Sr. João na portaria",
@@ -518,6 +520,27 @@ class FinalizarOTView(APIView, OTPermissionMixin):
         
         print(f"🏁 OT: {ot.numero_ot}")
         print(f"🏁 Status atual: {ot.status}")
+        print(f"📎 Arquivos anexados: {ot.arquivos.count()}")
+        
+        # 🔧 NOVA VALIDAÇÃO: Verificar arquivos ANTES de qualquer processamento
+        if ot.arquivos.count() == 0:
+            print(f"❌ Tentativa de finalizar OT sem documentos")
+            return Response({
+                'success': False,
+                'message': 'Não é possível finalizar a OT sem documentos anexados',
+                'errors': {
+                    'arquivos': [
+                        'É obrigatório anexar pelo menos um documento antes de finalizar a entrega.',
+                        'Tipos aceitos: canhoto assinado, foto da entrega, comprovante de entrega, etc.',
+                        f'Use o endpoint POST /api/ots/{pk}/arquivos/ para anexar documentos.'
+                    ]
+                },
+                'data': {
+                    'arquivos_count': 0,
+                    'tipos_aceitos': ['CANHOTO', 'FOTO_ENTREGA', 'COMPROVANTE', 'OUTRO'],
+                    'endpoint_upload': f'/api/ots/{pk}/arquivos/'
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         # Verificar se OT pode ser finalizada
         if not ot.pode_transicionar_para('ENTREGUE'):

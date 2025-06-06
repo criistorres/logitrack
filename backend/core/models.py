@@ -296,6 +296,59 @@ class OrdemTransporte(models.Model):
         """Verifica se a OT está finalizada."""
         return self.status in ['ENTREGUE', 'ENTREGUE_PARCIAL', 'CANCELADA']
     
+    @property
+    def pode_ser_finalizada(self):
+        """
+        🔧 NOVA PROPRIEDADE: Verifica se a OT pode ser finalizada.
+        
+        Regras:
+        1. Status deve permitir transição para ENTREGUE
+        2. Deve ter pelo menos um arquivo anexado
+        """
+        return (
+            self.pode_transicionar_para('ENTREGUE') and 
+            self.arquivos.count() > 0
+        )
+    
+    @property
+    def motivo_nao_finalizar(self):
+        """
+        🔧 NOVA PROPRIEDADE: Retorna o motivo pelo qual não pode finalizar.
+        """
+        motivos = []
+        
+        if not self.pode_transicionar_para('ENTREGUE'):
+            motivos.append(f'Status atual ({self.get_status_display()}) não permite finalização')
+        
+        if self.arquivos.count() == 0:
+            motivos.append('Nenhum documento anexado (obrigatório: canhoto, foto da entrega, etc.)')
+        
+        return motivos if motivos else ['OT pode ser finalizada']
+    
+    def get_arquivos_por_tipo(self):
+        """
+        🔧 NOVO MÉTODO: Retorna arquivos agrupados por tipo.
+        """
+        arquivos_dict = {}
+        for arquivo in self.arquivos.all():
+            tipo = arquivo.tipo
+            if tipo not in arquivos_dict:
+                arquivos_dict[tipo] = []
+            arquivos_dict[tipo].append(arquivo)
+        return arquivos_dict
+    
+    def tem_canhoto(self):
+        """
+        🔧 NOVO MÉTODO: Verifica se tem canhoto anexado.
+        """
+        return self.arquivos.filter(tipo='CANHOTO').exists()
+    
+    def tem_foto_entrega(self):
+        """
+        🔧 NOVO MÉTODO: Verifica se tem foto de entrega.
+        """
+        return self.arquivos.filter(tipo='FOTO_ENTREGA').exists()
+    
     def pode_transicionar_para(self, novo_status):
         """
         Verifica se é possível transicionar para o novo status.
@@ -317,7 +370,7 @@ class OrdemTransporte(models.Model):
         
         return novo_status in transicoes_validas.get(self.status, [])
     
-    def atualizar_status(self, novo_status, usuario, observacao=''):
+    def atualizar_status(self, novo_status, usuario, observacao=''):    
         """
         Atualiza o status da OT com validação e cria registro de atualização.
         
@@ -332,14 +385,26 @@ class OrdemTransporte(models.Model):
         Raises:
             ValidationError: Se a transição não for válida
         """
+        print(f"🔄 ATUALIZAR STATUS: {self.numero_ot}")
+        print(f"🔄 Status atual: {self.status}")
+        print(f"🔄 Novo status: {novo_status}")
+        
+        # 🔧 CORREÇÃO: Capturar status anterior ANTES de validar/alterar
+        status_anterior = self.status
+        
+        # Validar transição
         if not self.pode_transicionar_para(novo_status):
             raise ValidationError(
                 f'Não é possível transicionar de {self.get_status_display()} para {dict(self.STATUS_CHOICES)[novo_status]}'
             )
         
+        # 🔧 CORREÇÃO: Atualizar status APENAS após validação
         self.status = novo_status
         self.save()
         
+        print(f"✅ Status atualizado: {status_anterior} → {novo_status}")
+        
+        # 🔧 CORREÇÃO: Usar status_anterior capturado e novo_status real
         # Criar registro de atualização
         AtualizacaoOT.objects.create(
             ordem_transporte=self,
@@ -347,10 +412,11 @@ class OrdemTransporte(models.Model):
             tipo_atualizacao='STATUS',
             descricao=f'Status alterado para {self.get_status_display()}',
             observacao=observacao,
-            status_anterior=self.status,
-            status_novo=novo_status
+            status_anterior=status_anterior,  # ✅ Status anterior correto
+            status_novo=novo_status           # ✅ Status novo correto
         )
         
+        print(f"📝 Atualização registrada: {status_anterior} → {novo_status}")
         return True
     
     def transferir_para(self, novo_motorista, usuario_solicitante, motivo=''):
