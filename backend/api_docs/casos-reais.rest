@@ -21,15 +21,15 @@
 @otsURL = {{baseURL}}/api/ots
 
 # Tokens de usuários (ATUALIZE COM SEUS TOKENS)
-@tokenCarlos = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MjExNjM3LCJpYXQiOjE3NDkyMDgwMzcsImp0aSI6IjNmNjE2OTg3ZjMxNzQyOGE4OGE2YzVhYjBhZGI5NzQwIiwidXNlcl9pZCI6Mn0.b-zZTBKnWUWqI-c_HRsUTCR2WzbLFEHipufFx2kPLiA
-@tokenJose = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTgzODI1LCJpYXQiOjE3NDkxODAyMjUsImp0aSI6IjQ4ZWU1ZjMwZWNkYjQzNmM4YjFhNmZhYjA0MzZkOWMxIiwidXNlcl9pZCI6M30.gIBEtNDUwkRI6C_KHlWeN-18oTmIYxBRXE0NauVG00s
-@tokenAntonio = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTgzODQ1LCJpYXQiOjE3NDkxODAyNDUsImp0aSI6ImJjNTJlM2UyOGQ1MTQxNTA4NDIzZWI3ZDA3ZWQyMjJjIiwidXNlcl9pZCI6NH0.GX9coTOd-Bl9gyJ1IB4Tu9Vi5BR9aG_tW8By5AnHu4g
-@tokenLogistica = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MTgzODYzLCJpYXQiOjE3NDkxODAyNjMsImp0aSI6IjQ2MzljMzI2YTE1OTQzNGFhMjg5NTQ4Y2VlOTk1NDk3IiwidXNlcl9pZCI6NX0.Nm4cyO3NQ4u34GLxemVgIiS1Baptv_pYEwS-noNti_c
+@tokenCarlos = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MzI1Mzc5LCJpYXQiOjE3NDkzMjE3NzksImp0aSI6IjYwNGRlYjkwNTg5NjQ4MTE5MmFmYmJhMDYwNGJmNGFiIiwidXNlcl9pZCI6M30.7KKmipt596RWPn274Uaotg9fdivY-5teY5Xc1MlnEoA
+@tokenJose = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MzI1NDAwLCJpYXQiOjE3NDkzMjE4MDAsImp0aSI6ImMyMTI4ZTFiZWQzYjRjOTJiODE3NjcxNDI5MzY1OGY3IiwidXNlcl9pZCI6NH0.9YWE58qWafOHegCR1mGWb7rdVXoLZJDOcuTMp6eJsG0
+@tokenAntonio = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MzI1NDI1LCJpYXQiOjE3NDkzMjE4MjUsImp0aSI6ImY2MDM1NzNhYzIyNzRmM2RhMDIzYjIyNzEwOWVkZjY0IiwidXNlcl9pZCI6NX0.TGB2N_CeVN5Rtnr31yDINbR-b4bFkTisp5l_lsdzVzg
+@tokenLogistica = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ5MzI1NDQxLCJpYXQiOjE3NDkzMjE4NDEsImp0aSI6IjM1NWUxNzc5ZTJkNzRiNzI5MDc1MzliN2Q5YTIyZmVmIiwidXNlcl9pZCI6Nn0.R8u53EfGBbBQh3YMrnfe1HR4N4qw0M8IjKEJa1x9dHA
 
 # IDs dinâmicos (ATUALIZE CONFORME SUAS OTs)
 @otCaso1 = 1
-@otCaso2 = 
-@transferenciaId = 
+@otCaso2 = 2
+@transferenciaId = 1
 
 # ==============================================================================
 # 🔐 CONFIGURAÇÃO INICIAL - CRIAR/LOGAR USUÁRIOS
@@ -251,7 +251,7 @@ Content-Type: application/json
 ### Upload 1: Foto da chegada
 curl -X POST http://localhost:8000/api/ots/{{otCaso1}}/arquivos/ \
   -H "Authorization: Bearer {{tokenCarlos}}" \
-  -F "arquivo=@C:\Users\cristian.torres\GitHub\logitrack\lixo1.jpg" \
+  -F "arquivo=@\"C:\Users\cristian.torres\GitHub\logitrack\lixo1.jpg\""
   -F "tipo=FOTO_ENTREGA" \
   -F "descricao=Foto da chegada na Empresa ABC - Portaria principal"
 
@@ -372,7 +372,7 @@ Authorization: Bearer {{tokenJose}}
 Content-Type: application/json
 
 {
-    "motorista_destino_id": 6,
+    "motorista_destino_id": 5,
     "motivo": "Transferência planejada para veículo adequado - Caminhão grande não pode entrar no centro. Transferindo para van especializada em entregas urbanas.",
     "latitude": -23.5400,
     "longitude": -46.6200,

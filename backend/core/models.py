@@ -275,6 +275,263 @@ class OrdemTransporte(models.Model):
         
         return f"{prefixo}{novo_seq:03d}"
 
+    @property
+    def pode_ser_editada(self):
+        """Verifica se a OT pode ser editada."""
+        return self.status not in ['ENTREGUE', 'ENTREGUE_PARCIAL', 'CANCELADA']
+    
+    @property
+    def pode_ser_transferida(self):
+        """Verifica se a OT pode ser transferida para outro motorista."""
+        return self.status in ['INICIADA', 'EM_CARREGAMENTO', 'EM_TRANSITO']
+    
+    @property
+    def esta_finalizada(self):
+        """Verifica se a OT está finalizada."""
+        return self.status in ['ENTREGUE', 'ENTREGUE_PARCIAL', 'CANCELADA']
+    
+    @property
+    def pode_ser_finalizada(self):
+        """
+        🔧 NOVA PROPRIEDADE: Verifica se a OT pode ser finalizada.
+        
+        Regras:
+        1. Status deve permitir transição para ENTREGUE
+        2. Deve ter pelo menos um arquivo anexado
+        """
+        return (
+            self.pode_transicionar_para('ENTREGUE') and 
+            self.arquivos.count() > 0
+        )
+    
+    @property
+    def motivo_nao_finalizar(self):
+        """
+        🔧 NOVA PROPRIEDADE: Retorna o motivo pelo qual não pode finalizar.
+        """
+        motivos = []
+        
+        if not self.pode_transicionar_para('ENTREGUE'):
+            motivos.append(f'Status atual ({self.get_status_display()}) não permite finalização')
+        
+        if self.arquivos.count() == 0:
+            motivos.append('Nenhum documento anexado (obrigatório: canhoto, foto da entrega, etc.)')
+        
+        return motivos if motivos else ['OT pode ser finalizada']
+    
+    def get_arquivos_por_tipo(self):
+        """
+        🔧 NOVO MÉTODO: Retorna arquivos agrupados por tipo.
+        """
+        arquivos_dict = {}
+        for arquivo in self.arquivos.all():
+            tipo = arquivo.tipo
+            if tipo not in arquivos_dict:
+                arquivos_dict[tipo] = []
+            arquivos_dict[tipo].append(arquivo)
+        return arquivos_dict
+    
+    def tem_canhoto(self):
+        """
+        🔧 NOVO MÉTODO: Verifica se tem canhoto anexado.
+        """
+        return self.arquivos.filter(tipo='CANHOTO').exists()
+    
+    def tem_foto_entrega(self):
+        """
+        🔧 NOVO MÉTODO: Verifica se tem foto de entrega.
+        """
+        return self.arquivos.filter(tipo='FOTO_ENTREGA').exists()
+    
+    def pode_transicionar_para(self, novo_status):
+        """
+        Verifica se é possível transicionar para o novo status.
+        
+        Regras de transição:
+        - INICIADA → EM_CARREGAMENTO, CANCELADA
+        - EM_CARREGAMENTO → EM_TRANSITO, CANCELADA
+        - EM_TRANSITO → ENTREGUE, ENTREGUE_PARCIAL, CANCELADA
+        - Estados finais não podem transicionar
+        """
+        transicoes_validas = {
+            'INICIADA': ['EM_CARREGAMENTO', 'CANCELADA'],
+            'EM_CARREGAMENTO': ['EM_TRANSITO', 'CANCELADA'],
+            'EM_TRANSITO': ['ENTREGUE', 'ENTREGUE_PARCIAL', 'CANCELADA'],
+            'ENTREGUE': [],
+            'ENTREGUE_PARCIAL': [],
+            'CANCELADA': [],
+        }
+        
+        return novo_status in transicoes_validas.get(self.status, [])
+    
+    def atualizar_status(self, novo_status, usuario, observacao=''):    
+        """
+        Atualiza o status da OT com validação e cria registro de atualização.
+        
+        Args:
+            novo_status: Novo status desejado
+            usuario: Usuário que está fazendo a atualização
+            observacao: Observação sobre a mudança
+            
+        Returns:
+            bool: True se atualizado com sucesso
+            
+        Raises:
+            ValidationError: Se a transição não for válida
+        """
+        print(f"🔄 ATUALIZAR STATUS: {self.numero_ot}")
+        print(f"🔄 Status atual: {self.status}")
+        print(f"🔄 Novo status: {novo_status}")
+        
+        # 🔧 CORREÇÃO: Capturar status anterior ANTES de validar/alterar
+        status_anterior = self.status
+        
+        # Validar transição
+        if not self.pode_transicionar_para(novo_status):
+            raise ValidationError(
+                f'Não é possível transicionar de {self.get_status_display()} para {dict(self.STATUS_CHOICES)[novo_status]}'
+            )
+        
+        # 🔧 CORREÇÃO: Atualizar status APENAS após validação
+        self.status = novo_status
+        self.save()
+        
+        print(f"✅ Status atualizado: {status_anterior} → {novo_status}")
+        
+        # 🔧 CORREÇÃO: Usar status_anterior capturado e novo_status real
+        # Criar registro de atualização
+        AtualizacaoOT.objects.create(
+            ordem_transporte=self,
+            usuario=usuario,
+            tipo_atualizacao='STATUS',
+            descricao=f'Status alterado para {self.get_status_display()}',
+            observacao=observacao,
+            status_anterior=status_anterior,  # ✅ Status anterior correto
+            status_novo=novo_status           # ✅ Status novo correto
+        )
+        
+        print(f"📝 Atualização registrada: {status_anterior} → {novo_status}")
+        return True
+    
+    def transferir_para(self, novo_motorista, usuario_solicitante, motivo=''):
+        """
+        Transfere a OT para outro motorista com sistema de aceitação.
+        
+        🆕 NOVA LÓGICA COM ACEITAÇÃO:
+        - Motorista atual → Outro motorista: AGUARDANDO_ACEITACAO (motorista destino deve aceitar)
+        - Outros motoristas → Motorista: PENDENTE (logística deve aprovar)
+        - Logística/Admin → Qualquer: APROVADA (aprovação automática)
+        
+        Args:
+            novo_motorista: Motorista que receberá a OT
+            usuario_solicitante: Usuário que está solicitando a transferência
+            motivo: Motivo da transferência
+            
+        Returns:
+            TransferenciaOT: Objeto de transferência criado
+        """
+        if not self.pode_ser_transferida:
+            raise ValidationError('Esta OT não pode ser transferida no status atual')
+        
+        # Determinar status inicial baseado em quem está transferindo
+        if usuario_solicitante.role in ['logistica', 'admin']:
+            # Logística/Admin podem transferir diretamente
+            print(f"🔄 Transferência por logística/admin - aprovação automática")
+            status_inicial = 'APROVADA'
+            aprovado_por = usuario_solicitante
+            data_resposta = timezone.now()
+            
+        elif usuario_solicitante == self.motorista_atual:
+            # Motorista atual transfere - aguarda aceitação do destino
+            print(f"🔄 Transferência direta - aguardando aceitação do motorista destino")
+            status_inicial = 'AGUARDANDO_ACEITACAO'
+            aprovado_por = None
+            data_resposta = None
+            
+        else:
+            # Outro motorista solicita - aguarda aprovação da logística
+            print(f"🔄 Solicitação de transferência - aguarda aprovação da logística")
+            status_inicial = 'PENDENTE'
+            aprovado_por = None
+            data_resposta = None
+        
+        # Criar registro de transferência
+        transferencia = TransferenciaOT.objects.create(
+            ordem_transporte=self,
+            motorista_origem=self.motorista_atual,
+            motorista_destino=novo_motorista,
+            solicitado_por=usuario_solicitante,
+            aprovado_por=aprovado_por,
+            motivo=motivo,
+            status=status_inicial,
+            data_resposta=data_resposta
+        )
+        
+        # Se for aprovação automática (logística/admin), atualizar OT imediatamente
+        if status_inicial == 'APROVADA':
+            self.motorista_atual = novo_motorista
+            self.save(update_fields=['motorista_atual'])
+            
+            # Criar registro de atualização
+            AtualizacaoOT.objects.create(
+                ordem_transporte=self,
+                usuario=usuario_solicitante,
+                tipo_atualizacao='TRANSFERENCIA',
+                descricao=f'OT transferida de {transferencia.motorista_origem.full_name} para {transferencia.motorista_destino.full_name}',
+                observacao=f'{motivo} (Aprovada automaticamente por {usuario_solicitante.role})'
+            )
+        
+        print(f"✅ Transferência criada com status: {status_inicial}")
+        return transferencia
+    
+    def adicionar_arquivo(self, arquivo, tipo, usuario, descricao=''):
+        """
+        Adiciona um arquivo à OT.
+        
+        Args:
+            arquivo: Arquivo a ser adicionado
+            tipo: Tipo do arquivo (CANHOTO, FOTO_ENTREGA, etc)
+            usuario: Usuário que está adicionando
+            descricao: Descrição do arquivo
+            
+        Returns:
+            Arquivo: Objeto arquivo criado
+        """
+        return Arquivo.objects.create(
+            ordem_transporte=self,
+            arquivo=arquivo,
+            tipo=tipo,
+            enviado_por=usuario,
+            descricao=descricao
+        )
+    
+    def get_timeline(self):
+        """
+        Retorna a timeline completa da OT ordenada por data.
+        Inclui atualizações, transferências e uploads de arquivos.
+        """
+        from itertools import chain
+        from operator import attrgetter
+        
+        # Buscar todas as atualizações
+        atualizacoes = self.atualizacoes.all()
+        novo_seq = 1
+        
+        # Buscar todas as transferências
+        transferencias = self.transferencias.all()
+        
+        # Buscar todos os arquivos
+        arquivos = self.arquivos.all()
+        
+        # Combinar e ordenar por data
+        timeline = sorted(
+            chain(atualizacoes, transferencias, arquivos),
+            key=attrgetter('created_at' if hasattr(atualizacoes.first(), 'created_at') else 'data_criacao'),
+            reverse=True
+        )
+        
+        return timeline
+        return f"{prefixo}{novo_seq:03d}"
 
 # ==============================================================================
 # 📄 MODELO DE ARQUIVOS E DOCUMENTOS
@@ -334,6 +591,21 @@ class Arquivo(models.Model):
         'Data do Envio',
         auto_now_add=True
     )
+    @property
+    def nome_arquivo(self):
+        """Retorna apenas o nome do arquivo."""
+        import os
+        return os.path.basename(self.arquivo.name)
+    
+    @property
+    def tamanho_formatado(self):
+        """Retorna o tamanho do arquivo formatado."""
+        tamanho = self.arquivo.size
+        for unidade in ['B', 'KB', 'MB', 'GB']:
+            if tamanho < 1024.0:
+                return f"{tamanho:.1f} {unidade}"
+            tamanho /= 1024.0
+        return f"{tamanho:.1f} TB"
     
     class Meta:
         verbose_name = 'Arquivo'
@@ -460,6 +732,251 @@ class TransferenciaOT(models.Model):
     
     def __str__(self):
         return f'Transferência OT {self.ordem_transporte.numero_ot}: {self.motorista_origem} → {self.motorista_destino} ({self.get_status_display()})'
+
+    def aceitar(self, usuario_aceitador, observacao=''):
+        """
+        Aceita a transferência (motorista destino aceita).
+        
+        Args:
+            usuario_aceitador: Usuário que está aceitando (deve ser motorista_destino)
+            observacao: Observação sobre a aceitação
+            
+        Raises:
+            ValidationError: Se não pode aceitar
+        """
+        print(f"✅ ACEITAR TRANSFERENCIA: {self.id}")
+        
+        # Validações
+        if self.status != 'AGUARDANDO_ACEITACAO':
+            raise ValidationError(f'Apenas transferências aguardando aceitação podem ser aceitas. Status atual: {self.status}')
+        
+        if usuario_aceitador != self.motorista_destino:
+            raise ValidationError('Apenas o motorista de destino pode aceitar a transferência')
+        
+        # Aceitar transferência
+        self.status = 'APROVADA'
+        self.aprovado_por = usuario_aceitador
+        self.data_resposta = timezone.now()
+        self.observacao_aprovacao = observacao or 'Transferência aceita pelo motorista de destino'
+        self.save()
+        
+        # Atualizar motorista atual da OT
+        self.ordem_transporte.motorista_atual = self.motorista_destino
+        self.ordem_transporte.save()
+        
+        # Criar registro de atualização
+        AtualizacaoOT.objects.create(
+            ordem_transporte=self.ordem_transporte,
+            usuario=usuario_aceitador,
+            tipo_atualizacao='TRANSFERENCIA',
+            descricao=f'Transferência aceita: OT passou de {self.motorista_origem.full_name} para {self.motorista_destino.full_name}',
+            observacao=self.observacao_aprovacao
+        )
+        
+        print(f"✅ Transferência {self.id} aceita com sucesso")
+    
+    def recusar(self, usuario_recusador, observacao):
+        """
+        Recusa a transferência (motorista destino recusa).
+        
+        Args:
+            usuario_recusador: Usuário que está recusando (deve ser motorista_destino)
+            observacao: Motivo da recusa (obrigatório)
+            
+        Raises:
+            ValidationError: Se não pode recusar
+        """
+        print(f"❌ RECUSAR TRANSFERENCIA: {self.id}")
+        
+        # Validações
+        if self.status != 'AGUARDANDO_ACEITACAO':
+            raise ValidationError(f'Apenas transferências aguardando aceitação podem ser recusadas. Status atual: {self.status}')
+        
+        if usuario_recusador != self.motorista_destino:
+            raise ValidationError('Apenas o motorista de destino pode recusar a transferência')
+        
+        if not observacao:
+            raise ValidationError('Observação é obrigatória para recusar transferência')
+        
+        # Recusar transferência
+        self.status = 'REJEITADA'
+        self.aprovado_por = usuario_recusador
+        self.data_resposta = timezone.now()
+        self.observacao_aprovacao = observacao
+        self.save()
+        
+        # OT continua com motorista original (não alterar motorista_atual)
+        
+        print(f"❌ Transferência {self.id} recusada")
+    
+    def cancelar(self, usuario_cancelador, observacao=''):
+        """
+        Cancela a transferência (quem solicitou pode cancelar).
+        
+        Args:
+            usuario_cancelador: Usuário que está cancelando
+            observacao: Motivo do cancelamento
+            
+        Raises:
+            ValidationError: Se não pode cancelar
+        """
+        print(f"🚫 CANCELAR TRANSFERENCIA: {self.id}")
+        
+        # Validações
+        if self.status not in ['PENDENTE', 'AGUARDANDO_ACEITACAO']:
+            raise ValidationError(f'Apenas transferências pendentes ou aguardando aceitação podem ser canceladas. Status atual: {self.status}')
+        
+        # Verificar permissões para cancelar
+        pode_cancelar = (
+            usuario_cancelador == self.solicitado_por or  # Quem solicitou
+            usuario_cancelador == self.motorista_origem or  # Motorista origem
+            usuario_cancelador.role in ['logistica', 'admin']  # Logística/Admin
+        )
+        
+        if not pode_cancelar:
+            raise ValidationError('Você não tem permissão para cancelar esta transferência')
+        
+        # Cancelar transferência
+        self.status = 'CANCELADA'
+        self.aprovado_por = usuario_cancelador
+        self.data_resposta = timezone.now()
+        self.observacao_aprovacao = observacao or 'Transferência cancelada'
+        self.save()
+        
+        # OT continua com motorista original (não alterar motorista_atual)
+        
+        print(f"🚫 Transferência {self.id} cancelada")
+    
+    # ==============================================================================
+    # 🔧 MÉTODOS EXISTENTES MANTIDOS E MELHORADOS
+    # ==============================================================================
+    
+    def aprovar(self, usuario_aprovador, observacao=''):
+        """
+        Aprova a transferência (logística aprova solicitação).
+        
+        Args:
+            usuario_aprovador: Usuário que está aprovando (logística/admin)
+            observacao: Observação sobre a aprovação
+        """
+        print(f"✅ APROVAR TRANSFERENCIA LOGISTICA: {self.id}")
+        
+        if self.status != 'PENDENTE':
+            raise ValidationError(f'Apenas transferências pendentes podem ser aprovadas pela logística. Status atual: {self.status}')
+        
+        if usuario_aprovador.role not in ['logistica', 'admin']:
+            raise ValidationError('Apenas logística ou admin podem aprovar transferências')
+        
+        self.status = 'APROVADA'
+        self.aprovado_por = usuario_aprovador
+        self.data_resposta = timezone.now()
+        self.observacao_aprovacao = observacao or 'Aprovada pela logística'
+        self.save()
+        
+        # Atualizar motorista_atual da OT
+        self.ordem_transporte.motorista_atual = self.motorista_destino
+        self.ordem_transporte.save()
+        
+        # Criar registro de atualização
+        AtualizacaoOT.objects.create(
+            ordem_transporte=self.ordem_transporte,
+            usuario=usuario_aprovador,
+            tipo_atualizacao='TRANSFERENCIA',
+            descricao=f'Transferência aprovada pela logística: {self.motorista_origem.full_name} → {self.motorista_destino.full_name}',
+            observacao=self.observacao_aprovacao
+        )
+        
+        print(f"✅ Transferência {self.id} aprovada pela logística")
+    
+    def rejeitar(self, usuario_rejeitador, observacao):
+        """
+        Rejeita a transferência (logística rejeita solicitação).
+        
+        Args:
+            usuario_rejeitador: Usuário que está rejeitando (logística/admin)
+            observacao: Motivo da rejeição (obrigatório)
+        """
+        print(f"❌ REJEITAR TRANSFERENCIA LOGISTICA: {self.id}")
+        
+        if self.status != 'PENDENTE':
+            raise ValidationError(f'Apenas transferências pendentes podem ser rejeitadas pela logística. Status atual: {self.status}')
+        
+        if usuario_rejeitador.role not in ['logistica', 'admin']:
+            raise ValidationError('Apenas logística ou admin podem rejeitar transferências')
+        
+        if not observacao:
+            raise ValidationError('Observação é obrigatória para rejeitar transferência')
+        
+        self.status = 'REJEITADA'
+        self.aprovado_por = usuario_rejeitador
+        self.data_resposta = timezone.now()
+        self.observacao_aprovacao = observacao
+        self.save()
+        
+        print(f"❌ Transferência {self.id} rejeitada pela logística")
+    
+    # ==============================================================================
+    # 🔍 MÉTODOS DE VERIFICAÇÃO
+    # ==============================================================================
+    
+    def pode_ser_aceita_por(self, usuario):
+        """
+        Verifica se o usuário pode aceitar esta transferência.
+        """
+        return (
+            self.status == 'AGUARDANDO_ACEITACAO' and
+            usuario == self.motorista_destino
+        )
+    
+    def pode_ser_recusada_por(self, usuario):
+        """
+        Verifica se o usuário pode recusar esta transferência.
+        """
+        return (
+            self.status == 'AGUARDANDO_ACEITACAO' and
+            usuario == self.motorista_destino
+        )
+    
+    def pode_ser_cancelada_por(self, usuario):
+        """
+        Verifica se o usuário pode cancelar esta transferência.
+        """
+        return (
+            self.status in ['PENDENTE', 'AGUARDANDO_ACEITACAO'] and
+            (
+                usuario == self.solicitado_por or
+                usuario == self.motorista_origem or
+                usuario.role in ['logistica', 'admin']
+            )
+        )
+    
+    def pode_ser_aprovada_por(self, usuario):
+        """
+        Verifica se o usuário pode aprovar esta transferência (logística).
+        """
+        return (
+            self.status == 'PENDENTE' and
+            usuario.role in ['logistica', 'admin']
+        )
+    
+    def esta_finalizada(self):
+        """
+        Verifica se a transferência está em estado final.
+        """
+        return self.status in ['APROVADA', 'REJEITADA', 'CANCELADA']
+    
+    def get_tipo_transferencia(self):
+        """
+        Retorna o tipo de transferência baseado no fluxo.
+        """
+        if self.status == 'AGUARDANDO_ACEITACAO':
+            return 'DIRETA'  # Motorista → Motorista (aguarda aceitação)
+        elif self.status == 'PENDENTE':
+            return 'SOLICITACAO'  # Outro → Motorista (aguarda aprovação logística)
+        elif self.solicitado_por.role in ['logistica', 'admin']:
+            return 'LOGISTICA'  # Logística → Qualquer (aprovação automática)
+        else:
+            return 'OUTROS'
 
 
 # ==============================================================================
