@@ -126,8 +126,8 @@ class OrdemTransporte(models.Model):
     # Localização de Origem (onde a OT foi criada)
     latitude_origem = models.DecimalField(
         'Latitude de Origem',
-        max_digits=9,          # 🔧 CORRIGIDO: era 10, agora 9 (XXX.XXXXXX)
-        decimal_places=6,      # 🔧 CORRIGIDO: era 8, agora 6 (precisão de ~1 metro)
+        max_digits=18,         # 🔧 NOVO: Suporta até -XX.XXXXXXXXXXXXXXX (15 decimais)
+        decimal_places=15,     # 🔧 NOVO: Precisão submilimétrica
         null=True,
         blank=True,
         help_text='Latitude do local de criação da OT (-90 a +90)'
@@ -135,8 +135,8 @@ class OrdemTransporte(models.Model):
     
     longitude_origem = models.DecimalField(
         'Longitude de Origem',
-        max_digits=10,         # 🔧 CORRIGIDO: era 11, agora 10 (XXXX.XXXXXX)
-        decimal_places=6,      # 🔧 CORRIGIDO: era 8, agora 6 (precisão de ~1 metro)
+        max_digits=17,         # 🔧 NOVO: Suporta até -XXX.XXXXXXXXXXXXXX (14 decimais)
+        decimal_places=15,     # 🔧 NOVO: Precisão submilimétrica
         null=True,
         blank=True,
         help_text='Longitude do local de criação da OT (-180 a +180)'
@@ -152,8 +152,8 @@ class OrdemTransporte(models.Model):
     # Localização de Entrega (onde foi finalizada)
     latitude_entrega = models.DecimalField(
         'Latitude de Entrega',
-        max_digits=9,          # 🔧 CORRIGIDO: era 10, agora 9
-        decimal_places=6,      # 🔧 CORRIGIDO: era 8, agora 6
+        max_digits=18,         # 🔧 NOVO: Suporta até -XX.XXXXXXXXXXXXXXX (15 decimais)
+        decimal_places=15,     # 🔧 NOVO: Precisão submilimétrica
         null=True,
         blank=True,
         help_text='Latitude do local de entrega (-90 a +90)'
@@ -161,8 +161,8 @@ class OrdemTransporte(models.Model):
     
     longitude_entrega = models.DecimalField(
         'Longitude de Entrega',
-        max_digits=10,         # 🔧 CORRIGIDO: era 11, agora 10
-        decimal_places=6,      # 🔧 CORRIGIDO: era 8, agora 6
+        max_digits=17,         # 🔧 NOVO: Suporta até -XXX.XXXXXXXXXXXXXX (14 decimais)
+        decimal_places=15,     # 🔧 NOVO: Precisão submilimétrica
         null=True,
         blank=True,
         help_text='Longitude do local de entrega (-180 a +180)'
@@ -433,18 +433,18 @@ class TransferenciaOT(models.Model):
     # 🌍 LOCALIZAÇÃO DA TRANSFERÊNCIA (GPS CORRIGIDO)
     latitude = models.DecimalField(
         'Latitude',
-        max_digits=9,          # 🔧 CORRIGIDO: era 10, agora 9
-        decimal_places=6,      # 🔧 CORRIGIDO: era 8, agora 6
+        max_digits=18,         # 🔧 NOVO: Suporta até -XX.XXXXXXXXXXXXXXX (15 decimais)
+        decimal_places=15,     # 🔧 NOVO: Precisão submilimétrica
         null=True,
-        blank=True
+        blank=True,
     )
     
     longitude = models.DecimalField(
         'Longitude',
-        max_digits=10,         # 🔧 CORRIGIDO: era 11, agora 10
-        decimal_places=6,      # 🔧 CORRIGIDO: era 8, agora 6
+        max_digits=17,         # 🔧 NOVO: Suporta até -XXX.XXXXXXXXXXXXXX (14 decimais)
+        decimal_places=15,     # 🔧 NOVO: Precisão submilimétrica
         null=True,
-        blank=True
+        blank=True,
     )
     
     endereco = models.CharField(
@@ -532,18 +532,18 @@ class AtualizacaoOT(models.Model):
     # 🌍 LOCALIZAÇÃO NO MOMENTO DA ATUALIZAÇÃO (GPS CORRIGIDO)
     latitude = models.DecimalField(
         'Latitude',
-        max_digits=9,          # 🔧 CORRIGIDO: era 10, agora 9
-        decimal_places=6,      # 🔧 CORRIGIDO: era 8, agora 6
+        max_digits=18,         # 🔧 NOVO: Suporta até -XX.XXXXXXXXXXXXXXX (15 decimais)
+        decimal_places=15,     # 🔧 NOVO: Precisão submilimétrica
         null=True,
-        blank=True
+        blank=True,
     )
     
     longitude = models.DecimalField(
         'Longitude',
-        max_digits=10,         # 🔧 CORRIGIDO: era 11, agora 10
-        decimal_places=6,      # 🔧 CORRIGIDO: era 8, agora 6
+        max_digits=17,         # 🔧 NOVO: Suporta até -XXX.XXXXXXXXXXXXXX (14 decimais)
+        decimal_places=15,     # 🔧 NOVO: Precisão submilimétrica
         null=True,
-        blank=True
+        blank=True,
     )
     
     endereco = models.CharField(
