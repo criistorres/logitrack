@@ -1,6 +1,6 @@
-// mobile/src/screens/ots/CriarOTScreen.tsx - INTEGRADO COM API REAL
+// mobile/src/screens/ots/CriarOTScreen.tsx - VERSÃO CORRIGIDA
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -28,6 +28,7 @@ import { otService, CriarOTRequest } from '../../services';
 type AppStackParamList = {
   Home: undefined;
   CriarOT: undefined;
+  ListaOTs: undefined;
 };
 
 type CriarOTScreenNavigationProp = StackNavigationProp<AppStackParamList, 'CriarOT'>;
@@ -81,163 +82,142 @@ export default function CriarOTScreen({ navigation }: Props) {
         Alert.alert(
           'Permissão Necessária',
           'Para criar uma OT, precisamos acessar sua localização atual. Por favor, permita o acesso nas configurações.',
-          [
-            { text: 'Cancelar', style: 'cancel' },
-            { text: 'Configurações', onPress: () => Location.requestForegroundPermissionsAsync() }
-          ]
+          [{ text: 'OK' }]
         );
         return;
       }
-
+      
       console.log('✅ Permissão concedida, obtendo localização...');
       
       // Obter localização atual
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
-        // maximumAge: 300000, // Cache por 5 minutos
-        timeInterval: 10000  // Intervalo de atualização
+        timeInterval: 10000,
+        distanceInterval: 1,
       });
       
       console.log('📍 Localização obtida:', location.coords);
       
-      // Reverse geocoding para obter endereço
-      const [address] = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-      
-      const enderecoFormatado = address 
-        ? `${address.street || 'Local'}, ${address.streetNumber || ''} - ${address.subregion || address.city || 'Cidade'}, ${address.region || 'Estado'}`
-        : `Lat: ${location.coords.latitude.toFixed(6)}, Lng: ${location.coords.longitude.toFixed(6)}`;
-      
-      console.log('🏠 Endereço formatado:', enderecoFormatado);
-      
-      setDadosOT(prev => ({
-        ...prev,
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        endereco_origem: enderecoFormatado
-      }));
-      
-    } catch (error: any) {
-      console.error('❌ Erro ao obter localização:', error);
-      
-      let mensagemErro = 'Erro ao obter localização';
-      
-      // Tratar erros específicos do expo-location
-      if (error.code === 'E_LOCATION_SERVICES_DISABLED') {
-        mensagemErro = 'Serviços de localização desabilitados. Ative o GPS nas configurações.';
-      } else if (error.code === 'E_LOCATION_UNAUTHORIZED') {
-        mensagemErro = 'Permissão de localização negada.';
-      } else if (error.code === 'E_LOCATION_UNAVAILABLE') {
-        mensagemErro = 'Localização não disponível. Verifique se o GPS está funcionando.';
-      } else if (error.message?.includes('timeout') || error.message?.includes('timed out')) {
-        mensagemErro = 'Timeout ao obter localização. Tente novamente ou verifique o sinal GPS.';
+      // Tentar obter endereço
+      try {
+        const endereco = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        
+        if (endereco.length > 0) {
+          const enderecoPrincipal = endereco[0];
+          const enderecoFormatado = [
+            enderecoPrincipal.street,
+            enderecoPrincipal.streetNumber,
+            enderecoPrincipal.district,
+            enderecoPrincipal.city,
+            enderecoPrincipal.region
+          ].filter(Boolean).join(', ');
+          
+          console.log('🏠 Endereço formatado:', enderecoFormatado);
+          
+          setDadosOT(prev => ({
+            ...prev,
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            endereco_origem: enderecoFormatado || 'Localização capturada via GPS'
+          }));
+        } else {
+          // Sem endereço, usar apenas coordenadas
+          setDadosOT(prev => ({
+            ...prev,
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            endereco_origem: `GPS: ${location.coords.latitude.toFixed(6)}, ${location.coords.longitude.toFixed(6)}`
+          }));
+        }
+      } catch (geocodeError) {
+        console.log('⚠️ Erro no geocoding, usando apenas coordenadas:', geocodeError);
+        setDadosOT(prev => ({
+          ...prev,
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          endereco_origem: `GPS: ${location.coords.latitude.toFixed(6)}, ${location.coords.longitude.toFixed(6)}`
+        }));
       }
       
-      setErroLocalizacao(mensagemErro);
-      Alert.alert('Erro de Localização', mensagemErro);
-      
+    } catch (error) {
+      console.error('❌ Erro ao obter localização:', error);
+      setErroLocalizacao('Erro ao obter localização');
+      Alert.alert(
+        'Erro de GPS',
+        'Não foi possível obter sua localização. Verifique se o GPS está ativado e tente novamente.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLocalizacaoCarregando(false);
     }
   }, []);
 
   // ==============================================================================
-  // 🚪 FUNÇÃO PARA CANCELAR E SAIR
+  // 🔄 NAVEGAÇÃO ENTRE ETAPAS
   // ==============================================================================
-  
-  const cancelarEVoltarHome = useCallback(() => {
-    Alert.alert(
-      'Cancelar Criação de OT',
-      'Tem certeza que deseja cancelar? Todos os dados preenchidos serão perdidos.',
-      [
-        {
-          text: 'Continuar Editando',
-          style: 'cancel'
-        },
-        {
-          text: 'Sim, Cancelar',
-          style: 'destructive',
-          onPress: () => {
-            console.log('🚪 Usuário cancelou criação de OT');
-            navigation.navigate('Home');
-          }
-        }
-      ]
-    );
-  }, [navigation]);
   
   const proximaEtapa = useCallback(() => {
     if (etapaAtual < 5) {
-      setEtapaAtual(etapaAtual + 1);
-    }
-  }, [etapaAtual]);
-  
-  const etapaAnterior = useCallback(() => {
-    if (etapaAtual > 1) {
-      setEtapaAtual(etapaAtual - 1);
-    }
-  }, [etapaAtual]);
-  
-  const pularEtapa = useCallback(() => {
-    if (etapaAtual < 5) {
-      setEtapaAtual(etapaAtual + 1);
+      setEtapaAtual(prev => prev + 1);
     }
   }, [etapaAtual]);
 
+  const etapaAnterior = useCallback(() => {
+    if (etapaAtual > 1) {
+      setEtapaAtual(prev => prev - 1);
+    }
+  }, [etapaAtual]);
+
+  const voltarParaHome = useCallback(() => {
+    navigation.navigate('Home');
+  }, [navigation]);
+
   // ==============================================================================
-  // 💾 CRIAÇÃO DA OT COM API REAL
+  // 🚀 CRIAÇÃO DA OT (Integração Real com API)
   // ==============================================================================
   
   const criarOT = useCallback(async () => {
+    if (loading) return;
+    
     setLoading(true);
     
     try {
       console.log('🚚 Iniciando criação de OT com API real...');
       
-      // Preparar dados para API
-      const dadosAPI: CriarOTRequest = {
-        endereco_entrega: dadosOT.endereco_entrega.trim(),
-        cidade_entrega: dadosOT.cidade_entrega.trim(),
+      // Preparar dados para envio
+      const dadosParaEnvio: CriarOTRequest = {
+        cliente_nome: dadosOT.cliente_nome,
+        endereco_entrega: dadosOT.endereco_entrega,
+        cidade_entrega: dadosOT.cidade_entrega,
+        observacoes: dadosOT.observacoes,
+        latitude_origem: dadosOT.latitude || undefined,
+        longitude_origem: dadosOT.longitude || undefined,
+        endereco_origem: dadosOT.endereco_origem || undefined,
       };
       
-      // Adicionar campos opcionais apenas se preenchidos
-      if (dadosOT.cliente_nome.trim()) {
-        dadosAPI.cliente_nome = dadosOT.cliente_nome.trim();
-      }
-      
-      if (dadosOT.observacoes.trim()) {
-        dadosAPI.observacoes = dadosOT.observacoes.trim();
-      }
-      
-      if (dadosOT.latitude && dadosOT.longitude) {
-        dadosAPI.latitude_origem = dadosOT.latitude;
-        dadosAPI.longitude_origem = dadosOT.longitude;
-      }
-      
-      if (dadosOT.endereco_origem.trim()) {
-        dadosAPI.endereco_origem = dadosOT.endereco_origem.trim();
-      }
-      
-      console.log('📋 Dados enviados para API:', dadosAPI);
+      console.log('📋 Dados enviados para API:', dadosParaEnvio);
       
       // Chamar API para criar OT
-      const response = await otService.criarOT(dadosAPI);
+      const response = await otService.criarOT(dadosParaEnvio);
       
       if (response.success && response.data) {
-        console.log('✅ OT criada com sucesso:', response.data.numero_ot);
+        // CORREÇÃO: Acessar response.data.data em vez de response.data
+        const otCriada = response.data.data;
+        
+        console.log('✅ OT criada com sucesso:', otCriada?.numero_ot);
         
         Alert.alert(
-          '🎉 OT Criada com Sucesso!',
-          `Número da OT: ${response.data.numero_ot}\nStatus: ${response.data.status}\n\nAgora você pode iniciar o carregamento.`,
+          'OT Criada com Sucesso! 🎉',
+          `Número da OT: ${otCriada?.numero_ot}\nStatus: ${otCriada?.status}\n\nAgora você pode iniciar o carregamento.`,
           [
             { 
-              text: 'Ver Detalhes', 
+              text: 'Ver Minhas OTs', 
               onPress: () => {
-                // TODO: Navegar para tela de detalhes da OT
-                console.log('🔍 Navegar para detalhes da OT:', response.data?.id);
-                navigation.navigate('Home');
+                console.log('📋 Navegando para Lista de OTs após criação');
+                navigation.navigate('ListaOTs');
               }
             },
             { 
@@ -298,10 +278,10 @@ export default function CriarOTScreen({ navigation }: Props) {
   }, []);
 
   // ==============================================================================
-  // 📐 COMPONENTE: INDICADOR DE PROGRESSO (Memoizado)
+  // 📐 COMPONENTE: INDICADOR DE PROGRESSO
   // ==============================================================================
   
-  const IndicadorProgresso = useMemo(() => (
+  const renderIndicadorProgresso = () => (
     <View className="flex-row items-center justify-center mb-6 px-4">
       {[1, 2, 3, 4, 5].map((numero) => (
         <React.Fragment key={numero}>
@@ -318,7 +298,7 @@ export default function CriarOTScreen({ navigation }: Props) {
           </View>
           {numero < 5 && (
             <View 
-              className={`flex-1 h-1 mx-2 ${
+              className={`flex-1 h-0.5 mx-2 ${
                 numero < etapaAtual ? 'bg-blue-500' : 'bg-gray-300'
               }`} 
             />
@@ -326,13 +306,13 @@ export default function CriarOTScreen({ navigation }: Props) {
         </React.Fragment>
       ))}
     </View>
-  ), [etapaAtual]);
+  );
 
   // ==============================================================================
-  // 📍 ETAPA 1: CONFIRMAÇÃO DE LOCALIZAÇÃO
+  // 🌍 ETAPA 1: LOCALIZAÇÃO GPS
   // ==============================================================================
   
-  const Etapa1Localizacao = useMemo(() => (
+  const renderEtapa1Localizacao = () => (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
@@ -347,39 +327,68 @@ export default function CriarOTScreen({ navigation }: Props) {
           <View className="items-center mb-8">
             <Text className="text-6xl mb-4">📍</Text>
             <Text className="text-2xl font-bold text-gray-800 text-center mb-2">
-              Confirme sua localização
+              Localização de Origem
             </Text>
             <Text className="text-gray-600 text-center text-base">
-              Vamos registrar onde você está para iniciar a OT
+              Onde você está agora? Esta será a origem da coleta.
             </Text>
           </View>
 
-          {dadosOT.latitude ? (
-            <View className="bg-green-50 p-4 rounded-lg mb-6 border border-green-200">
-              <Text className="text-green-800 font-semibold mb-2">📍 Localização capturada:</Text>
-              <Text className="text-green-700">{dadosOT.endereco_origem}</Text>
-              <Text className="text-green-600 text-sm mt-1">
-                Lat: {dadosOT.latitude?.toFixed(6)}, Lng: {dadosOT.longitude?.toFixed(6)}
+          {/* Campo de endereço manual */}
+          <View className="bg-white rounded-lg p-4 shadow-sm mb-6">
+            <Text className="text-gray-800 font-semibold text-base mb-3">
+              Endereço de Origem
+            </Text>
+            <TextInput
+              value={dadosOT.endereco_origem}
+              onChangeText={(text) => setDadosOT(prev => ({ ...prev, endereco_origem: text }))}
+              placeholder="Digite o endereço ou use o GPS..."
+              className="bg-gray-100 p-4 rounded-lg text-gray-800 text-base"
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
+          {/* Informações de GPS */}
+          {dadosOT.latitude && dadosOT.longitude && (
+            <View className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <View className="flex-row items-center mb-2">
+                <Text className="text-green-700 text-lg mr-2">✅</Text>
+                <Text className="text-green-700 font-semibold text-base">
+                  Localização GPS Capturada
+                </Text>
+              </View>
+              <Text className="text-green-600 text-sm">
+                Lat: {dadosOT.latitude.toFixed(6)}
               </Text>
-            </View>
-          ) : erroLocalizacao ? (
-            <View className="bg-red-50 p-4 rounded-lg mb-6 border border-red-200">
-              <Text className="text-red-800 font-semibold mb-2">❌ Erro de localização:</Text>
-              <Text className="text-red-700">{erroLocalizacao}</Text>
-              <Text className="text-red-600 text-sm mt-1">
-                Tente novamente ou verifique as permissões do app
-              </Text>
-            </View>
-          ) : (
-            <View className="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-200">
-              <Text className="text-blue-800 text-center">
-                Pressione o botão abaixo para capturar sua localização atual
+              <Text className="text-green-600 text-sm">
+                Lng: {dadosOT.longitude.toFixed(6)}
               </Text>
             </View>
           )}
 
-          <View className="flex-1 justify-end">
-            {!dadosOT.latitude ? (
+          {/* Erro de localização */}
+          {erroLocalizacao && (
+            <View className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <View className="flex-row items-center mb-2">
+                <Text className="text-red-700 text-lg mr-2">❌</Text>
+                <Text className="text-red-700 font-semibold text-base">
+                  Erro de Localização
+                </Text>
+              </View>
+              <Text className="text-red-600 text-sm">
+                {erroLocalizacao}
+              </Text>
+            </View>
+          )}
+
+          {/* Spacer */}
+          <View className="flex-1" />
+
+          {/* Botões de ação */}
+          <View className="space-y-3">
+            {!dadosOT.latitude || !dadosOT.longitude ? (
               <TouchableOpacity 
                 onPress={obterLocalizacao}
                 disabled={localizacaoCarregando}
@@ -416,13 +425,13 @@ export default function CriarOTScreen({ navigation }: Props) {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  ), [dadosOT.latitude, dadosOT.longitude, dadosOT.endereco_origem, localizacaoCarregando, erroLocalizacao, obterLocalizacao, proximaEtapa]);
+  );
 
   // ==============================================================================
   // 👤 ETAPA 2: INFORMAÇÕES DO CLIENTE
   // ==============================================================================
   
-  const Etapa2Cliente = useMemo(() => (
+  const renderEtapa2Cliente = () => (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
@@ -444,145 +453,166 @@ export default function CriarOTScreen({ navigation }: Props) {
             </Text>
           </View>
 
-          <View className="mb-6">
-            <Text className="text-gray-700 font-semibold mb-2 text-base">Nome do Cliente</Text>
+          <View className="bg-white rounded-lg p-4 shadow-sm mb-6">
+            <Text className="text-gray-800 font-semibold text-base mb-3">
+              Nome do Cliente *
+            </Text>
             <TextInput
               value={dadosOT.cliente_nome}
               onChangeText={updateClienteNome}
-              placeholder="Ex: Empresa ABC Ltda"
-              className="border border-gray-300 rounded-lg p-4 text-base bg-white"
-              returnKeyType="next"
-              blurOnSubmit={false}
+              placeholder="Ex: João Silva, Empresa ABC Ltda..."
+              className="bg-gray-100 p-4 rounded-lg text-gray-800 text-base"
+              placeholderTextColor="#9CA3AF"
+              autoCapitalize="words"
             />
-            <Text className="text-gray-500 text-sm mt-1">
-              * Este campo pode ser preenchido depois se necessário
-            </Text>
           </View>
 
-          <View className="flex-1 justify-end space-y-3">
-            <TouchableOpacity 
-              onPress={proximaEtapa}
-              className="bg-blue-500 p-4 rounded-lg flex-row items-center justify-center"
-            >
-              <Text className="text-white font-semibold text-lg mr-2">Continuar</Text>
-              <Text className="text-white text-lg">→</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={pularEtapa}
-              className="bg-gray-200 p-4 rounded-lg flex-row items-center justify-center"
-            >
-              <Text className="text-gray-700 font-semibold">Pular (Adicionar Depois)</Text>
-            </TouchableOpacity>
-            
+          {/* Spacer */}
+          <View className="flex-1" />
+
+          {/* Botões de navegação */}
+          <View className="flex-row space-x-3">
             <TouchableOpacity 
               onPress={etapaAnterior}
-              className="bg-gray-100 p-3 rounded-lg flex-row items-center justify-center"
+              className="flex-1 bg-gray-200 p-4 rounded-lg flex-row items-center justify-center"
             >
-              <Text className="text-gray-600">← Voltar</Text>
+              <Text className="text-gray-700 text-lg mr-2">←</Text>
+              <Text className="text-gray-700 font-semibold">Voltar</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={proximaEtapa}
+              disabled={!dadosOT.cliente_nome.trim()}
+              className={`flex-1 p-4 rounded-lg flex-row items-center justify-center ${
+                dadosOT.cliente_nome.trim() 
+                  ? 'bg-blue-500' 
+                  : 'bg-gray-300'
+              }`}
+            >
+              <Text className={`font-semibold text-lg mr-2 ${
+                dadosOT.cliente_nome.trim() 
+                  ? 'text-white' 
+                  : 'text-gray-500'
+              }`}>
+                Continuar
+              </Text>
+              <Text className={`text-lg ${
+                dadosOT.cliente_nome.trim() 
+                  ? 'text-white' 
+                  : 'text-gray-500'
+              }`}>
+                →
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  ), [dadosOT.cliente_nome, updateClienteNome, proximaEtapa, pularEtapa, etapaAnterior]);
+  );
 
   // ==============================================================================
-  // 🎯 ETAPA 3: DESTINO DA ENTREGA
+  // 📍 ETAPA 3: ENDEREÇO DE ENTREGA
   // ==============================================================================
   
-  const Etapa3Destino = useMemo(() => {
-    const podeProxima = dadosOT.endereco_entrega.trim() && dadosOT.cidade_entrega.trim();
-    
-    return (
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+  const renderEtapa3Entrega = () => (
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className="flex-1"
+    >
+      <ScrollView 
+        className="flex-1" 
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView 
-          className="flex-1" 
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View className="flex-1 p-6">
-            <View className="items-center mb-8">
-              <Text className="text-6xl mb-4">🎯</Text>
-              <Text className="text-2xl font-bold text-gray-800 text-center mb-2">
-                Destino da Entrega
-              </Text>
-              <Text className="text-gray-600 text-center text-base">
-                Onde a mercadoria será entregue?
-              </Text>
-            </View>
-
-            <View className="space-y-4 mb-6">
-              <View>
-                <Text className="text-gray-700 font-semibold mb-2 text-base">
-                  Endereço de Entrega *
-                </Text>
-                <TextInput
-                  value={dadosOT.endereco_entrega}
-                  onChangeText={updateEnderecoEntrega}
-                  placeholder="Ex: Rua das Flores, 123 - Centro"
-                  className="border border-gray-300 rounded-lg p-4 text-base bg-white h-20"
-                  multiline
-                  textAlignVertical="top"
-                  returnKeyType="next"
-                  blurOnSubmit={false}
-                />
-              </View>
-              
-              <View>
-                <Text className="text-gray-700 font-semibold mb-2 text-base">
-                  Cidade de Entrega *
-                </Text>
-                <TextInput
-                  value={dadosOT.cidade_entrega}
-                  onChangeText={updateCidadeEntrega}
-                  placeholder="Ex: Campinas"
-                  className="border border-gray-300 rounded-lg p-4 text-base bg-white"
-                  returnKeyType="done"
-                />
-              </View>
-            </View>
-
-            <View className="flex-1 justify-end space-y-3">
-              <TouchableOpacity 
-                onPress={proximaEtapa}
-                disabled={!podeProxima}
-                className={`p-4 rounded-lg flex-row items-center justify-center ${
-                  podeProxima ? 'bg-blue-500' : 'bg-gray-300'
-                }`}
-              >
-                <Text className={`font-semibold text-lg mr-2 ${
-                  podeProxima ? 'text-white' : 'text-gray-500'
-                }`}>
-                  Continuar
-                </Text>
-                <Text className={`text-lg ${
-                  podeProxima ? 'text-white' : 'text-gray-500'
-                }`}>→</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                onPress={etapaAnterior}
-                className="bg-gray-100 p-3 rounded-lg flex-row items-center justify-center"
-              >
-                <Text className="text-gray-600">← Voltar</Text>
-              </TouchableOpacity>
-            </View>
+        <View className="flex-1 p-6">
+          <View className="items-center mb-8">
+            <Text className="text-6xl mb-4">📍</Text>
+            <Text className="text-2xl font-bold text-gray-800 text-center mb-2">
+              Endereço de Entrega
+            </Text>
+            <Text className="text-gray-600 text-center text-base">
+              Para onde devemos levar a mercadoria?
+            </Text>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    );
-  }, [dadosOT.endereco_entrega, dadosOT.cidade_entrega, updateEnderecoEntrega, updateCidadeEntrega, proximaEtapa, etapaAnterior]);
+
+          <View className="bg-white rounded-lg p-4 shadow-sm mb-4">
+            <Text className="text-gray-800 font-semibold text-base mb-3">
+              Endereço Completo *
+            </Text>
+            <TextInput
+              value={dadosOT.endereco_entrega}
+              onChangeText={updateEnderecoEntrega}
+              placeholder="Rua, número, bairro..."
+              className="bg-gray-100 p-4 rounded-lg text-gray-800 text-base"
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
+          <View className="bg-white rounded-lg p-4 shadow-sm mb-6">
+            <Text className="text-gray-800 font-semibold text-base mb-3">
+              Cidade *
+            </Text>
+            <TextInput
+              value={dadosOT.cidade_entrega}
+              onChangeText={updateCidadeEntrega}
+              placeholder="Ex: São Paulo, Rio de Janeiro..."
+              className="bg-gray-100 p-4 rounded-lg text-gray-800 text-base"
+              placeholderTextColor="#9CA3AF"
+              autoCapitalize="words"
+            />
+          </View>
+
+          {/* Spacer */}
+          <View className="flex-1" />
+
+          {/* Botões de navegação */}
+          <View className="flex-row space-x-3">
+            <TouchableOpacity 
+              onPress={etapaAnterior}
+              className="flex-1 bg-gray-200 p-4 rounded-lg flex-row items-center justify-center"
+            >
+              <Text className="text-gray-700 text-lg mr-2">←</Text>
+              <Text className="text-gray-700 font-semibold">Voltar</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={proximaEtapa}
+              disabled={!dadosOT.endereco_entrega.trim() || !dadosOT.cidade_entrega.trim()}
+              className={`flex-1 p-4 rounded-lg flex-row items-center justify-center ${
+                dadosOT.endereco_entrega.trim() && dadosOT.cidade_entrega.trim()
+                  ? 'bg-blue-500' 
+                  : 'bg-gray-300'
+              }`}
+            >
+              <Text className={`font-semibold text-lg mr-2 ${
+                dadosOT.endereco_entrega.trim() && dadosOT.cidade_entrega.trim()
+                  ? 'text-white' 
+                  : 'text-gray-500'
+              }`}>
+                Continuar
+              </Text>
+              <Text className={`text-lg ${
+                dadosOT.endereco_entrega.trim() && dadosOT.cidade_entrega.trim()
+                  ? 'text-white' 
+                  : 'text-gray-500'
+              }`}>
+                →
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 
   // ==============================================================================
   // 📝 ETAPA 4: OBSERVAÇÕES
   // ==============================================================================
   
-  const Etapa4Observacoes = useMemo(() => (
+  const renderEtapa4Observacoes = () => (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
@@ -600,63 +630,59 @@ export default function CriarOTScreen({ navigation }: Props) {
               Observações
             </Text>
             <Text className="text-gray-600 text-center text-base">
-              Alguma informação importante sobre a carga ou entrega?
+              Alguma informação adicional sobre esta entrega?
             </Text>
           </View>
 
-          <View className="mb-6">
-            <Text className="text-gray-700 font-semibold mb-2 text-base">
+          <View className="bg-white rounded-lg p-4 shadow-sm mb-6">
+            <Text className="text-gray-800 font-semibold text-base mb-3">
               Observações (Opcional)
             </Text>
             <TextInput
               value={dadosOT.observacoes}
               onChangeText={updateObservacoes}
-              placeholder="Ex: Mercadoria frágil, entregar no setor de recebimento..."
-              className="border border-gray-300 rounded-lg p-4 text-base bg-white h-32"
+              placeholder="Ex: Produto frágil, entregar pela manhã, aguardar no portão..."
+              className="bg-gray-100 p-4 rounded-lg text-gray-800 text-base"
+              placeholderTextColor="#9CA3AF"
               multiline
+              numberOfLines={4}
               textAlignVertical="top"
-              returnKeyType="done"
             />
-            <Text className="text-gray-500 text-sm mt-1">
-              * Estas informações ajudam outros motoristas e a logística
-            </Text>
           </View>
 
-          <View className="flex-1 justify-end space-y-3">
-            <TouchableOpacity 
-              onPress={proximaEtapa}
-              className="bg-blue-500 p-4 rounded-lg flex-row items-center justify-center"
-            >
-              <Text className="text-white font-semibold text-lg mr-2">
-                {dadosOT.observacoes.trim() ? 'Continuar' : 'Continuar sem Observações'}
-              </Text>
-              <Text className="text-white text-lg">→</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={pularEtapa}
-              className="bg-gray-200 p-4 rounded-lg flex-row items-center justify-center"
-            >
-              <Text className="text-gray-700 font-semibold">Pular</Text>
-            </TouchableOpacity>
-            
+          {/* Spacer */}
+          <View className="flex-1" />
+
+          {/* Botões de navegação */}
+          <View className="flex-row space-x-3">
             <TouchableOpacity 
               onPress={etapaAnterior}
-              className="bg-gray-100 p-3 rounded-lg flex-row items-center justify-center"
+              className="flex-1 bg-gray-200 p-4 rounded-lg flex-row items-center justify-center"
             >
-              <Text className="text-gray-600">← Voltar</Text>
+              <Text className="text-gray-700 text-lg mr-2">←</Text>
+              <Text className="text-gray-700 font-semibold">Voltar</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={proximaEtapa}
+              className="flex-1 bg-blue-500 p-4 rounded-lg flex-row items-center justify-center"
+            >
+              <Text className="text-white font-semibold text-lg mr-2">
+                Revisar
+              </Text>
+              <Text className="text-white text-lg">→</Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  ), [dadosOT.observacoes, updateObservacoes, proximaEtapa, pularEtapa, etapaAnterior]);
+  );
 
   // ==============================================================================
-  // ✅ ETAPA 5: RESUMO E CONFIRMAÇÃO
+  // ✅ ETAPA 5: CONFIRMAÇÃO E CRIAÇÃO
   // ==============================================================================
   
-  const Etapa5Resumo = useMemo(() => (
+  const renderEtapa5Confirmacao = () => (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
@@ -671,114 +697,129 @@ export default function CriarOTScreen({ navigation }: Props) {
           <View className="items-center mb-8">
             <Text className="text-6xl mb-4">✅</Text>
             <Text className="text-2xl font-bold text-gray-800 text-center mb-2">
-              Confirme os Dados
+              Revisar e Confirmar
             </Text>
             <Text className="text-gray-600 text-center text-base">
-              Revise as informações antes de criar a OT
+              Verifique os dados antes de criar a OT
             </Text>
           </View>
 
-          <View className="flex-1 mb-6">
-            <View className="space-y-4">
-              {/* Localização */}
-              <View className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <Text className="font-semibold text-gray-800 mb-2">📍 Local de Origem</Text>
-                <Text className="text-gray-700">{dadosOT.endereco_origem || 'Localização capturada'}</Text>
+          {/* Resumo da OT */}
+          <View className="bg-white rounded-lg shadow-sm mb-6">
+            <View className="p-4 border-b border-gray-100">
+              <Text className="text-gray-800 font-bold text-lg">
+                Resumo da Ordem de Transporte
+              </Text>
+            </View>
+
+            <View className="p-4 space-y-4">
+              {/* Cliente */}
+              <View>
+                <Text className="text-gray-500 text-sm font-semibold mb-1">CLIENTE</Text>
+                <Text className="text-gray-800 text-base">{dadosOT.cliente_nome}</Text>
+              </View>
+
+              {/* Origem */}
+              <View>
+                <Text className="text-gray-500 text-sm font-semibold mb-1">ORIGEM</Text>
+                <Text className="text-gray-800 text-base">{dadosOT.endereco_origem || 'GPS Capturado'}</Text>
                 {dadosOT.latitude && dadosOT.longitude && (
-                  <Text className="text-gray-500 text-sm mt-1">
-                    Coordenadas: {dadosOT.latitude.toFixed(6)}, {dadosOT.longitude.toFixed(6)}
+                  <Text className="text-gray-500 text-xs mt-1">
+                    GPS: {dadosOT.latitude.toFixed(6)}, {dadosOT.longitude.toFixed(6)}
                   </Text>
                 )}
               </View>
 
-              {/* Cliente */}
-              <View className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <Text className="font-semibold text-gray-800 mb-2">👤 Cliente</Text>
-                <Text className="text-gray-700">
-                  {dadosOT.cliente_nome || 'Não informado (pode ser adicionado depois)'}
-                </Text>
-              </View>
-
               {/* Destino */}
-              <View className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <Text className="font-semibold text-gray-800 mb-2">🎯 Destino</Text>
-                <Text className="text-gray-700 mb-1">{dadosOT.endereco_entrega}</Text>
-                <Text className="text-gray-600">{dadosOT.cidade_entrega}</Text>
+              <View>
+                <Text className="text-gray-500 text-sm font-semibold mb-1">DESTINO</Text>
+                <Text className="text-gray-800 text-base">{dadosOT.endereco_entrega}</Text>
+                <Text className="text-gray-600 text-sm mt-1">{dadosOT.cidade_entrega}</Text>
               </View>
 
               {/* Observações */}
-              {dadosOT.observacoes && (
-                <View className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <Text className="font-semibold text-gray-800 mb-2">📝 Observações</Text>
-                  <Text className="text-gray-700">{dadosOT.observacoes}</Text>
+              {dadosOT.observacoes.trim() && (
+                <View>
+                  <Text className="text-gray-500 text-sm font-semibold mb-1">OBSERVAÇÕES</Text>
+                  <Text className="text-gray-800 text-base">{dadosOT.observacoes}</Text>
                 </View>
               )}
             </View>
           </View>
 
+          {/* Spacer */}
+          <View className="flex-1" />
+
+          {/* Botões de ação final */}
           <View className="space-y-3">
             <TouchableOpacity 
               onPress={criarOT}
               disabled={loading}
               className="bg-green-500 p-4 rounded-lg flex-row items-center justify-center"
             >
-              {loading && <ActivityIndicator color="white" className="mr-2" />}
-              <Text className="text-white font-semibold text-lg">
-                {loading ? 'Criando OT na API...' : '✅ Criar Ordem de Transporte'}
+              {loading && (
+                <ActivityIndicator color="white" className="mr-2" />
+              )}
+              <Text className="text-white font-bold text-lg">
+                {loading ? 'Criando OT...' : '🚛 Criar Ordem de Transporte'}
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity 
               onPress={etapaAnterior}
               disabled={loading}
-              className="bg-gray-100 p-3 rounded-lg flex-row items-center justify-center"
+              className="bg-gray-200 p-4 rounded-lg flex-row items-center justify-center"
             >
-              <Text className="text-gray-600">← Voltar para Corrigir</Text>
+              <Text className="text-gray-700 text-lg mr-2">←</Text>
+              <Text className="text-gray-700 font-semibold">Voltar e Editar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={voltarParaHome}
+              disabled={loading}
+              className="bg-red-100 p-4 rounded-lg flex-row items-center justify-center"
+            >
+              <Text className="text-red-600 font-semibold">Cancelar e Voltar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  ), [dadosOT, loading, criarOT, etapaAnterior]);
+  );
 
   // ==============================================================================
-  // 🎨 RENDER PRINCIPAL
+  // 🎯 RENDERIZAÇÃO PRINCIPAL
   // ==============================================================================
   
-  const renderEtapa = () => {
+  const renderEtapaAtual = () => {
     switch (etapaAtual) {
-      case 1: return Etapa1Localizacao;
-      case 2: return Etapa2Cliente;
-      case 3: return Etapa3Destino;
-      case 4: return Etapa4Observacoes;
-      case 5: return Etapa5Resumo;
-      default: return Etapa1Localizacao;
+      case 1: return renderEtapa1Localizacao();
+      case 2: return renderEtapa2Cliente();
+      case 3: return renderEtapa3Entrega();
+      case 4: return renderEtapa4Observacoes();
+      case 5: return renderEtapa5Confirmacao();
+      default: return renderEtapa1Localizacao();
     }
   };
 
   return (
-    <View className="flex-1 bg-white">
-      {/* Header com Progresso e Botão Cancelar */}
-      <View className="pt-12 pb-4 bg-white border-b border-gray-200">
-        <View className="flex-row items-center justify-between px-4 mb-4">
-          <Text className="text-lg font-semibold text-gray-800">
-            Nova Ordem de Transporte
-          </Text>
-          <TouchableOpacity
-            onPress={cancelarEVoltarHome}
-            className="p-2 rounded-full bg-gray-100"
-          >
-            <Text className="text-gray-600 text-lg font-bold">✕</Text>
+    <View className="flex-1 bg-gray-50">
+      {/* Header */}
+      <View className="bg-white shadow-sm">
+        <View className="flex-row items-center justify-between px-4 py-4">
+          <TouchableOpacity onPress={voltarParaHome}>
+            <Text className="text-blue-500 text-lg font-semibold">← Voltar</Text>
           </TouchableOpacity>
+          <Text className="text-gray-800 text-lg font-bold">Criar Nova OT</Text>
+          <View className="w-16" />
         </View>
-        {IndicadorProgresso}
-        <Text className="text-center text-gray-600">
-          Etapa {etapaAtual} de 5
-        </Text>
+        
+        {/* Indicador de progresso */}
+        {renderIndicadorProgresso()}
       </View>
 
-      {/* Conteúdo da Etapa Atual */}
-      {renderEtapa()}
+      {/* Conteúdo da etapa atual */}
+      {renderEtapaAtual()}
     </View>
   );
 }

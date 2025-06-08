@@ -135,7 +135,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       
       // Fazer chamada para API para validar token
-      const DEVELOPMENT_IP = '192.168.0.2'; // Ajuste conforme seu IP
+      const DEVELOPMENT_IP = '192.168.0.8'; // Ajuste conforme seu IP
       const response = await fetch(`http://${DEVELOPMENT_IP}:8000/api/auth/user/`, {
         method: 'GET',
         headers: {
@@ -380,7 +380,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🔄 AuthContext: Solicitando reset de senha...');
       console.log(`🔄 Email: ${email}`);
       
-      const DEVELOPMENT_IP = '192.168.0.2'; // Ajuste conforme seu IP
+      const DEVELOPMENT_IP = '192.168.0.8'; // Ajuste conforme seu IP
       const response = await fetch(`http://${DEVELOPMENT_IP}:8000/api/auth/password/reset/`, {
         method: 'POST',
         headers: {
@@ -412,7 +412,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🔄 AuthContext: Confirmando reset de senha...');
       console.log(`🔄 Código: ${data.code}`);
       
-      const DEVELOPMENT_IP = '192.168.0.2'; // Ajuste conforme seu IP
+      const DEVELOPMENT_IP = '192.168.0.8'; // Ajuste conforme seu IP
       const response = await fetch(`http://${DEVELOPMENT_IP}:8000/api/auth/password/confirm/`, {
         method: 'POST',
         headers: {

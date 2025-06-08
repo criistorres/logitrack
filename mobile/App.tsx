@@ -1,4 +1,4 @@
-// mobile/App.tsx - VERSÃO CORRIGIDA SEM ERROS
+// mobile/App.tsx - VERSÃO CORRIGIDA PARA PROBLEMA DE NAVEGAÇÃO
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -9,24 +9,31 @@ import './global.css';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import HomeScreen from './src/screens/HomeScreen';
 import { ForgotPasswordScreen, LoginScreen, RegisterScreen } from './src/screens/auth';
-import { CriarOTScreen } from './src/screens/ots';
+import { CriarOTScreen, ListaOTScreen } from './src/screens/ots';
 
 // ==============================================================================
 // 📋 TIPOS DE NAVEGAÇÃO
 // ==============================================================================
 
 type AppStackParamList = {
+  // Telas de autenticação
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
+  
+  // Telas principais
   Home: undefined;
+  
+  // Telas de OTs
   CriarOT: undefined;
+  ListaOTs: undefined;
+  DetalhesOT: { otId: number };
 };
 
 const Stack = createStackNavigator<AppStackParamList>();
 
 // ==============================================================================
-// 🗺️ NAVIGATOR - ESTRUTURA LIMPA
+// 🗺️ NAVIGATOR - ESTRUTURA SIMPLIFICADA
 // ==============================================================================
 
 function AppContent() {
@@ -50,21 +57,51 @@ function AppContent() {
   
   return (
     <Stack.Navigator
+      initialRouteName={isAuthenticated ? "Home" : "Login"}
       screenOptions={{
         headerShown: false,
         gestureEnabled: true,
       }}
     >
       {isAuthenticated ? (
+        // ========================================================================
+        // 🔐 TELAS AUTENTICADAS
+        // ========================================================================
         <>
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="CriarOT" component={CriarOTScreen} />
+          <Stack.Screen 
+            name="Home" 
+            component={HomeScreen}
+          />
+          
+          <Stack.Screen 
+            name="CriarOT" 
+            component={CriarOTScreen}
+          />
+          
+          <Stack.Screen 
+            name="ListaOTs" 
+            component={ListaOTScreen}
+          />
         </>
       ) : (
+        // ========================================================================
+        // 🚪 TELAS DE AUTENTICAÇÃO
+        // ========================================================================
         <>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen 
+            name="Login" 
+            component={LoginScreen}
+          />
+          
+          <Stack.Screen 
+            name="Register" 
+            component={RegisterScreen}
+          />
+          
+          <Stack.Screen 
+            name="ForgotPassword" 
+            component={ForgotPasswordScreen}
+          />
         </>
       )}
     </Stack.Navigator>

@@ -1,9 +1,9 @@
-// mobile/src/services/otService.ts
+// mobile/src/services/otService.ts - VERSÃO CORRIGIDA
 
 import { apiService } from './api';
 
 // ==============================================================================
-// 📋 TIPOS E INTERFACES PARA OTs
+// 📋 TIPOS E INTERFACES PARA OTs - CORRIGIDOS
 // ==============================================================================
 
 export interface CriarOTRequest {
@@ -26,17 +26,17 @@ export interface OT {
   status: 'INICIADA' | 'EM_CARREGAMENTO' | 'EM_TRANSITO' | 'ENTREGUE' | 'ENTREGUE_PARCIAL' | 'CANCELADA';
   
   // Localização
-  latitude_origem?: number;
-  longitude_origem?: number;
+  latitude_origem?: string | number; // API pode retornar string
+  longitude_origem?: string | number; // API pode retornar string
   endereco_origem?: string;
-  latitude_entrega?: number;
-  longitude_entrega?: number;
+  latitude_entrega?: string | number;
+  longitude_entrega?: string | number;
   endereco_entrega_real?: string;
   
   // Datas
   data_criacao: string;
   data_atualizacao: string;
-  data_finalizacao?: string;
+  data_finalizacao?: string | null;
   
   // Relacionamentos
   motorista_criador: {
@@ -44,22 +44,55 @@ export interface OT {
     email: string;
     full_name: string;
     role: string;
+    is_active: boolean;
   };
   motorista_atual: {
     id: number;
     email: string;
     full_name: string;
     role: string;
+    is_active: boolean;
   };
   
-  // Status
-  ativa: boolean;
+  // Status e permissões
+  ativa?: boolean;
+  esta_finalizada: boolean;
+  pode_ser_editada: boolean;
+  pode_ser_finalizada: boolean;
+  pode_ser_transferida: boolean;
+  status_display: string;
+  
+  // Arquivos e documentos
+  arquivos?: any[];
+  arquivos_count: number;
+  tem_canhoto: boolean;
+  tem_foto_entrega: boolean;
+  
+  // Observações
+  observacoes_entrega?: string;
+  motivo_nao_finalizar?: string[];
+  
+  // Transferências
+  transferencias?: any[];
+  
+  // Timeline
+  atualizacoes_recentes?: any[];
+}
+
+// CORREÇÃO: Estrutura real da resposta da API
+interface ApiListaResponse {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: OT[];
 }
 
 export interface CriarOTResponse {
   success: boolean;
   message: string;
-  data?: OT;
+  data?: {
+    data: OT; // API retorna data.data
+  };
   errors?: any;
 }
 
@@ -67,10 +100,8 @@ export interface ListarOTsResponse {
   success: boolean;
   message: string;
   data?: {
-    results: OT[];
-    count: number;
-    next?: string;
-    previous?: string;
+    data: ApiListaResponse; // API retorna data.data
+    stats?: any;
   };
   errors?: any;
 }
@@ -78,7 +109,9 @@ export interface ListarOTsResponse {
 export interface DetalhesOTResponse {
   success: boolean;
   message: string;
-  data?: OT;
+  data?: {
+    data: OT; // API retorna data.data
+  };
   errors?: any;
 }
 
@@ -90,7 +123,7 @@ export interface AtualizarStatusRequest {
 }
 
 // ==============================================================================
-// 🚚 SERVIÇO DE ORDENS DE TRANSPORTE
+// 🚚 SERVIÇO DE ORDENS DE TRANSPORTE - CORRIGIDO
 // ==============================================================================
 
 export const otService = {
@@ -103,13 +136,17 @@ export const otService = {
     try {
       console.log('🚚 OT Service: Criando nova OT...', dados);
       
-      const response = await apiService.post<OT>('/ots/', dados);
+      const response = await apiService.post<{
+        success: boolean;
+        message: string;
+        data: OT;
+      }>('/ots/', dados);
       
-      console.log('✅ OT Service: OT criada com sucesso:', response.data);
+      console.log('✅ OT Service: OT criada com sucesso:', response.data.data);
       
       return {
         success: true,
-        message: 'OT criada com sucesso!',
+        message: response.data.message || 'OT criada com sucesso!',
         data: response.data
       };
       
@@ -145,25 +182,26 @@ export const otService = {
   },
   
   // ==============================================================================
-  // 📋 LISTAR OTs DO USUÁRIO
+  // 📋 LISTAR OTs DO USUÁRIO - CORRIGIDO
   // ==============================================================================
   
-  async listarOTs(filtros?: { status?: string; page?: number }): Promise<ListarOTsResponse> {
+  async listarOTs(filtros?: { status?: string; page?: number; search?: string }): Promise<ListarOTsResponse> {
     try {
       console.log('📋 OT Service: Listando OTs...', filtros);
       
       const response = await apiService.get<{
-        results: OT[];
-        count: number;
-        next?: string;
-        previous?: string;
+        success: boolean;
+        message: string;
+        data: ApiListaResponse;
+        stats?: any;
       }>('/ots/', filtros);
       
-      console.log(`✅ OT Service: ${response.data.count} OTs encontradas`);
+      const totalOTs = response.data.data?.count || 0;
+      console.log(`✅ OT Service: ${totalOTs} OTs encontradas`);
       
       return {
         success: true,
-        message: `${response.data.count} OTs encontradas`,
+        message: `${totalOTs} OTs encontradas`,
         data: response.data
       };
       
@@ -186,9 +224,13 @@ export const otService = {
     try {
       console.log(`🔍 OT Service: Buscando detalhes da OT ${id}...`);
       
-      const response = await apiService.get<OT>(`/ots/${id}/`);
+      const response = await apiService.get<{
+        success: boolean;
+        message: string;
+        data: OT;
+      }>(`/ots/${id}/`);
       
-      console.log('✅ OT Service: Detalhes obtidos:', response.data.numero_ot);
+      console.log('✅ OT Service: Detalhes obtidos:', response.data.data?.numero_ot);
       
       return {
         success: true,
@@ -229,13 +271,17 @@ export const otService = {
     try {
       console.log(`🔄 OT Service: Atualizando status da OT ${id}:`, dados);
       
-      const response = await apiService.patch<OT>(`/ots/${id}/status/`, dados);
+      const response = await apiService.patch<{
+        success: boolean;
+        message: string;
+        data: OT;
+      }>(`/ots/${id}/status/`, dados);
       
-      console.log('✅ OT Service: Status atualizado:', response.data.status);
+      console.log('✅ OT Service: Status atualizado:', response.data.data?.status);
       
       return {
         success: true,
-        message: `Status atualizado para ${response.data.status}`,
+        message: `Status atualizado para ${response.data.data?.status}`,
         data: response.data
       };
       
@@ -277,9 +323,13 @@ export const otService = {
     try {
       console.log(`🏁 OT Service: Finalizando OT ${id}:`, dados);
       
-      const response = await apiService.post<OT>(`/ots/${id}/finalizar/`, dados);
+      const response = await apiService.post<{
+        success: boolean;
+        message: string;
+        data: OT;
+      }>(`/ots/${id}/finalizar/`, dados);
       
-      console.log('✅ OT Service: OT finalizada:', response.data.numero_ot);
+      console.log('✅ OT Service: OT finalizada:', response.data.data?.numero_ot);
       
       return {
         success: true,
