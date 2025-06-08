@@ -26,6 +26,7 @@ from .views import (
     RecusarTransferenciaView,
     CancelarTransferenciaView,
     MinhasTransferenciasView,
+    TransferenciaOTDetailView,
     
     # Views de debugging
     debug_ot_info,
@@ -135,6 +136,12 @@ urlpatterns = [
         name='minhas_transferencias'
     ),
     # GET /api/ots/transferencias/minhas/ - Lista transferências do usuário
+
+    path(
+        'transferencias/<int:pk>/',
+        TransferenciaOTDetailView.as_view(),
+        name='transferencia_detail'
+    ),
     
     path(
         'transferencias/<int:pk>/aceitar/',

@@ -410,6 +410,125 @@ class TransferirOTView(APIView, OTPermissionMixin):
                 'errors': serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
 
+class TransferenciaOTDetailView(generics.RetrieveAPIView, OTPermissionMixin):
+    """
+    🎯 PROPÓSITO: Visualizar detalhes de uma transferência específica
+    
+    GET /api/ots/transferencias/{id}/
+    
+    🔍 DEBUGGING: Para verificar processo de recuperação de transferência:
+    1. Coloque breakpoint em get_object() para ver permissões
+    2. Teste com diferentes usuários (motorista origem, destino, logística)
+    3. Verifique se retorna dados completos da transferência
+    
+    📋 CASOS DE USO:
+    - Motorista verifica status de transferência que solicitou
+    - Motorista verifica transferência que recebeu
+    - Logística acompanha todas as transferências
+    - App mobile mostra detalhes da transferência
+    """
+    
+    serializer_class = TransferenciaOTSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        """
+        Recupera a transferência com validação de permissões.
+        
+        🔒 REGRAS DE PERMISSÃO:
+        - Motorista origem: pode ver transferências que ele solicitou
+        - Motorista destino: pode ver transferências para ele
+        - Logística/Admin: pode ver todas as transferências
+        
+        🐛 DEBUGGING: Coloque breakpoint aqui para ver processo
+        """
+        print(f"🔍 GET TRANSFERENCIA: ID {self.kwargs['pk']}")
+        print(f"🔍 Usuário: {self.request.user.email} ({self.request.user.role})")
+        
+        # Recuperar transferência
+        transferencia = get_object_or_404(TransferenciaOT, pk=self.kwargs['pk'])
+        
+        print(f"🔍 Transferência encontrada:")
+        print(f"   - OT: {transferencia.ordem_transporte.numero_ot}")
+        print(f"   - De: {transferencia.motorista_origem.email}")
+        print(f"   - Para: {transferencia.motorista_destino.email}")
+        print(f"   - Status: {transferencia.status}")
+        print(f"   - Solicitada por: {transferencia.solicitado_por.email}")
+        
+        user = self.request.user
+        
+        # Verificar permissões baseadas no role do usuário
+        if user.role in ['logistica', 'admin']:
+            print(f"✅ Permissão concedida: {user.role} pode ver todas as transferências")
+            return transferencia
+        
+        # Motoristas só podem ver transferências relacionadas a eles
+        if user.role == 'motorista':
+            # Pode ver se é motorista origem, destino, ou solicitante
+            if (user == transferencia.motorista_origem or 
+                user == transferencia.motorista_destino or 
+                user == transferencia.solicitado_por):
+                print(f"✅ Permissão concedida: motorista está relacionado à transferência")
+                return transferencia
+            else:
+                print(f"❌ Permissão negada: motorista não está relacionado à transferência")
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("Você não tem permissão para ver esta transferência")
+        
+        # Fallback: negar acesso
+        print(f"❌ Permissão negada: role não reconhecido ou sem permissão")
+        from rest_framework.exceptions import PermissionDenied
+        raise PermissionDenied("Você não tem permissão para ver esta transferência")
+    
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Customiza a resposta GET para incluir dados adicionais.
+        
+        🔍 DEBUGGING: Coloque breakpoint aqui para ver resposta completa
+        """
+        print(f"🔍 RETRIEVE: Buscando detalhes da transferência")
+        
+        # Recuperar transferência
+        transferencia = self.get_object()
+        
+        # Serializar dados
+        serializer = self.get_serializer(transferencia)
+        
+        # Adicionar dados extras úteis para o frontend
+        dados_extras = {
+            'pode_aceitar': (
+                request.user == transferencia.motorista_destino and 
+                transferencia.status == 'AGUARDANDO_ACEITACAO'
+            ),
+            'pode_recusar': (
+                request.user == transferencia.motorista_destino and 
+                transferencia.status == 'AGUARDANDO_ACEITACAO'
+            ),
+            'pode_cancelar': (
+                (request.user == transferencia.solicitado_por and 
+                 transferencia.status in ['PENDENTE', 'AGUARDANDO_ACEITACAO']) or
+                request.user.role in ['logistica', 'admin']
+            ),
+            'pode_aprovar': (
+                request.user.role in ['logistica', 'admin'] and 
+                transferencia.status == 'PENDENTE'
+            ),
+            'tempo_desde_solicitacao': (
+                timezone.now() - transferencia.data_solicitacao
+            ).total_seconds() / 3600,  # em horas
+        }
+        
+        print(f"✅ Transferência recuperada com sucesso")
+        print(f"   - Pode aceitar: {dados_extras['pode_aceitar']}")
+        print(f"   - Pode recusar: {dados_extras['pode_recusar']}")
+        print(f"   - Pode cancelar: {dados_extras['pode_cancelar']}")
+        
+        return Response({
+            'success': True,
+            'message': f'Detalhes da transferência da OT {transferencia.ordem_transporte.numero_ot}',
+            'data': serializer.data,
+            'meta': dados_extras
+        })
 
 class AtualizarStatusOTView(APIView, OTPermissionMixin):
     """
