@@ -365,7 +365,7 @@ export default function CriarOTScreenUltraSimple() {
         )}
 
         {/* Spacer */}
-        <View style={{ flex: 1 }} />
+        {/* <View style={{ flex: 1 }} /> */}
 
         {/* Botões de ação */}
         <View style={{ gap: 12 }}>
