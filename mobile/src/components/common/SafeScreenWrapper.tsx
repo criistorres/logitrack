@@ -1,19 +1,9 @@
 // mobile/src/components/common/SafeScreenWrapper.tsx
-// COMPONENTE BASE PARA TODAS AS TELAS - RESOLVE PROBLEMAS DE SAFE AREA
+// COMPONENTE BASE PARA TODAS AS TELAS - VERSÃO TAILWIND CSS
 
 import React from 'react';
 import { View, Platform, StatusBar } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-
-// ==============================================================================
-// 🎨 CONFIGURAÇÕES DE DESIGN CONSISTENTES
-// ==============================================================================
-
-const CORES = {
-  fundoPrincipal: '#F9FAFB',
-  fundoCard: '#FFFFFF',
-  textoEscuro: '#1F2937',
-};
 
 // ==============================================================================
 // 📱 INTERFACE DO COMPONENTE
@@ -27,10 +17,11 @@ interface SafeScreenWrapperProps {
   withPadding?: boolean;
   withTabPadding?: boolean;
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
+  className?: string;
 }
 
 // ==============================================================================
-// 🛡️ COMPONENTE WRAPPER UNIVERSAL
+// 🛡️ COMPONENTE WRAPPER UNIVERSAL COM TAILWIND
 // ==============================================================================
 
 /**
@@ -42,6 +33,8 @@ interface SafeScreenWrapperProps {
  * - Status bar mal configurada
  * - Padding inconsistente
  * 
+ * ✅ Usa Tailwind CSS para estilos
+ * 
  * 🎯 Uso:
  * <SafeScreenWrapper withTabPadding>
  *   <YourScreenContent />
@@ -49,12 +42,13 @@ interface SafeScreenWrapperProps {
  */
 export default function SafeScreenWrapper({
   children,
-  backgroundColor = CORES.fundoPrincipal,
+  backgroundColor = 'bg-gray-50',
   statusBarStyle = 'dark-content',
   statusBarBackgroundColor,
   withPadding = false,
   withTabPadding = true,
   edges = ['top', 'left', 'right'],
+  className = '',
 }: SafeScreenWrapperProps) {
   
   const insets = useSafeAreaInsets();
@@ -63,20 +57,18 @@ export default function SafeScreenWrapper({
   // 📐 CÁLCULOS DE ESPAÇAMENTO RESPONSIVOS
   // ==============================================================================
   
-  // Altura da tab bar (configurada no App.tsx)
+  // Altura da tab bar (baseada no App.tsx funcionando)
   const TAB_HEIGHT = Platform.OS === 'ios' ? 85 : 65;
   
-  // Padding bottom dinâmico baseado na presença de tabs
-  const paddingBottom = withTabPadding ? TAB_HEIGHT : insets.bottom;
-  
-  // Padding horizontal padrão
-  const horizontalPadding = withPadding ? 16 : 0;
+  // Classes Tailwind para padding
+  const paddingClasses = withPadding ? 'px-4' : '';
+  const tabPaddingStyle = withTabPadding ? { paddingBottom: TAB_HEIGHT } : {};
   
   // ==============================================================================
   // 🎨 CONFIGURAÇÃO DA STATUS BAR
   // ==============================================================================
   
-  const statusBarBg = statusBarBackgroundColor || backgroundColor;
+  const statusBarBg = statusBarBackgroundColor || '#F9FAFB';
   
   return (
     <>
@@ -87,22 +79,15 @@ export default function SafeScreenWrapper({
         translucent={false}
       />
       
-      {/* ===== SAFE AREA VIEW ===== */}
+      {/* ===== SAFE AREA VIEW COM TAILWIND ===== */}
       <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor,
-        }}
+        className={`flex-1 ${backgroundColor}`}
         edges={edges}
       >
         {/* ===== CONTAINER PRINCIPAL ===== */}
         <View
-          style={{
-            flex: 1,
-            backgroundColor,
-            paddingHorizontal: horizontalPadding,
-            paddingBottom: withTabPadding ? TAB_HEIGHT : 0,
-          }}
+          className={`flex-1 ${backgroundColor} ${paddingClasses} ${className}`}
+          style={tabPaddingStyle}
         >
           {children}
         </View>
@@ -112,15 +97,23 @@ export default function SafeScreenWrapper({
 }
 
 // ==============================================================================
-// 🎯 VARIAÇÕES PRÉ-CONFIGURADAS
+// 🎯 VARIAÇÕES PRÉ-CONFIGURADAS COM TAILWIND
 // ==============================================================================
 
 /**
  * Variação para telas com tabs (padrão)
  */
-export function TabScreenWrapper({ children, ...props }: Omit<SafeScreenWrapperProps, 'withTabPadding'>) {
+export function TabScreenWrapper({ 
+  children, 
+  className = '',
+  ...props 
+}: Omit<SafeScreenWrapperProps, 'withTabPadding'>) {
   return (
-    <SafeScreenWrapper withTabPadding={true} {...props}>
+    <SafeScreenWrapper 
+      withTabPadding={true} 
+      className={className}
+      {...props}
+    >
       {children}
     </SafeScreenWrapper>
   );
@@ -129,11 +122,17 @@ export function TabScreenWrapper({ children, ...props }: Omit<SafeScreenWrapperP
 /**
  * Variação para telas de autenticação (sem tabs)
  */
-export function AuthScreenWrapper({ children, ...props }: Omit<SafeScreenWrapperProps, 'withTabPadding'>) {
+export function AuthScreenWrapper({ 
+  children, 
+  className = '',
+  ...props 
+}: Omit<SafeScreenWrapperProps, 'withTabPadding'>) {
   return (
     <SafeScreenWrapper 
       withTabPadding={false} 
       edges={['top', 'left', 'right', 'bottom']}
+      backgroundColor="bg-white"
+      className={className}
       {...props}
     >
       {children}
@@ -144,12 +143,17 @@ export function AuthScreenWrapper({ children, ...props }: Omit<SafeScreenWrapper
 /**
  * Variação para telas modais
  */
-export function ModalScreenWrapper({ children, ...props }: Omit<SafeScreenWrapperProps, 'withTabPadding' | 'edges'>) {
+export function ModalScreenWrapper({ 
+  children, 
+  className = '',
+  ...props 
+}: Omit<SafeScreenWrapperProps, 'withTabPadding' | 'edges'>) {
   return (
     <SafeScreenWrapper 
       withTabPadding={false}
       edges={['top', 'left', 'right', 'bottom']}
-      backgroundColor={CORES.fundoCard}
+      backgroundColor="bg-white"
+      className={className}
       {...props}
     >
       {children}
@@ -158,39 +162,7 @@ export function ModalScreenWrapper({ children, ...props }: Omit<SafeScreenWrappe
 }
 
 // ==============================================================================
-// 📋 EXEMPLO DE USO NAS TELAS
-// ==============================================================================
-
-/**
- * EXEMPLO EM HomeScreen.tsx:
- * 
- * import { TabScreenWrapper } from '../components/common/SafeScreenWrapper';
- * 
- * export default function HomeScreen() {
- *   return (
- *     <TabScreenWrapper withPadding>
- *       <ScrollView>
- *         // Seu conteúdo aqui
- *       </ScrollView>
- *     </TabScreenWrapper>
- *   );
- * }
- * 
- * EXEMPLO EM LoginScreen.tsx:
- * 
- * import { AuthScreenWrapper } from '../components/common/SafeScreenWrapper';
- * 
- * export default function LoginScreen() {
- *   return (
- *     <AuthScreenWrapper>
- *       // Conteúdo da tela de login
- *     </AuthScreenWrapper>
- *   );
- * }
- */
-
-// ==============================================================================
-// 🔧 HOOKS AUXILIARES
+// 🔧 HOOKS AUXILIARES PARA DIMENSÕES
 // ==============================================================================
 
 /**
@@ -210,31 +182,93 @@ export function useSafeDimensions() {
 }
 
 /**
- * Hook para estilos responsivos baseados na plataforma
+ * Hook para classes Tailwind baseadas na plataforma
  */
-export function usePlatformStyles() {
+export function usePlatformClasses() {
   const isIOS = Platform.OS === 'ios';
   const isAndroid = Platform.OS === 'android';
   
   return {
     // Sombras
-    shadow: isIOS ? {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    } : {
-      elevation: 4,
-    },
+    shadow: isIOS ? 'shadow-lg' : 'elevation-4',
     
     // Bordas
-    borderRadius: isIOS ? 12 : 8,
-    
-    // Tipografia
-    fontWeight: isIOS ? '600' : 'bold',
+    borderRadius: isIOS ? 'rounded-xl' : 'rounded-lg',
     
     // Espaçamentos
-    padding: isIOS ? 16 : 14,
-    margin: isIOS ? 12 : 10,
+    padding: isIOS ? 'p-4' : 'p-3',
+    margin: isIOS ? 'm-3' : 'm-2',
+    
+    // Classes específicas de plataforma
+    platform: {
+      ios: isIOS,
+      android: isAndroid,
+    }
   };
 }
+
+// ==============================================================================
+// 📋 EXEMPLO DE USO NAS TELAS
+// ==============================================================================
+
+/**
+ * EXEMPLO EM HomeScreen.tsx:
+ * 
+ * import { TabScreenWrapper } from '../components/common/SafeScreenWrapper';
+ * 
+ * export default function HomeScreen() {
+ *   return (
+ *     <TabScreenWrapper withPadding className="bg-gray-50">
+ *       <ScrollView className="flex-1">
+ *         // Seu conteúdo aqui
+ *       </ScrollView>
+ *     </TabScreenWrapper>
+ *   );
+ * }
+ * 
+ * EXEMPLO EM LoginScreen.tsx:
+ * 
+ * import { AuthScreenWrapper } from '../components/common/SafeScreenWrapper';
+ * 
+ * export default function LoginScreen() {
+ *   return (
+ *     <AuthScreenWrapper className="bg-primary-50">
+ *       // Conteúdo da tela de login
+ *     </AuthScreenWrapper>
+ *   );
+ * }
+ */
+
+// ==============================================================================
+// ✅ CLASSES TAILWIND DISPONÍVEIS
+// ==============================================================================
+
+/**
+ * 🎨 CLASSES TAILWIND PERSONALIZADAS LOGITRAK:
+ * 
+ * CORES PRINCIPAIS:
+ * - bg-primary-500, text-primary-500 (Azul LogiTrack)
+ * - bg-accent-500, text-accent-500 (Laranja)
+ * - bg-success-500, text-success-500 (Verde)
+ * - bg-danger-500, text-danger-500 (Vermelho)
+ * - bg-warning-500, text-warning-500 (Amarelo)
+ * 
+ * BACKGROUNDS:
+ * - bg-app-background (Fundo geral #f9fafb)
+ * - bg-surface (Cards brancos)
+ * - bg-surface-hover (Hover em cards)
+ * 
+ * STATUS OTS:
+ * - bg-ot-iniciada (Amarelo)
+ * - bg-ot-carregamento (Azul)
+ * - bg-ot-transito (Roxo)
+ * - bg-ot-entregue (Verde)
+ * - bg-ot-cancelada (Vermelho)
+ * 
+ * SOMBRAS E ELEVAÇÕES:
+ * - shadow-primary (Sombra azul)
+ * - shadow-logitrack-lg (Sombra personalizada)
+ * 
+ * 🎯 RESULTADO: Todas as telas terão estilos consistentes
+ * e nunca mais problemas com tab bar sobrepondo conteúdo!
+ */

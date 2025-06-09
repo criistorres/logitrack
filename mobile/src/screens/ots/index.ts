@@ -1,37 +1,50 @@
-// mobile/src/screens/ots/index.ts - ATUALIZADO COM LISTA DE OTs
+// mobile/src/screens/ots/index.ts - EXPORTS DAS TELAS DE ORDENS DE TRANSPORTE
 
 // ==============================================================================
-// 📱 EXPORTS DAS TELAS DE OT - VERSÃO COMPLETA
+// 📋 EXPORTS DAS TELAS DE OTs
 // ==============================================================================
 
-/**
- * Arquivo central de exportação para todas as telas relacionadas a OTs
- * Facilita importações e mantém organização do código
- */
+// Tela de listagem de OTs
+export { default as ListaOTScreen } from './ListaOTScreen';
+export { default as ListaOTScreenFixed } from './ListaOTScreenFixed';
 
-// Telas já implementadas
+// Tela de criação de OT
 export { default as CriarOTScreen } from './CriarOTScreen';
-export { default as ListaOTScreen } from './ListaOTScreen'
+export { default as CriarOTScreenFixed } from './CriarOTScreenFixed';
 
-// Telas futuras (próximas implementações)
-// export { default as DetalhesOTScreen } from './DetalhesOTScreen';
-// export { default as TransferirOTScreen } from './TransferirOTScreen';
-// export { default as FinalizarOTScreen } from './FinalizarOTScreen';
-// export { default as UploadDocumentosScreen } from './UploadDocumentosScreen';
+// Tela de detalhes de OT - NOVA
+export { default as DetalhesOTScreen } from './DetalhesOTScreen';
 
 // ==============================================================================
-// 📋 TIPOS DE NAVEGAÇÃO RELACIONADOS A OTs
+// 📋 TIPOS DE NAVEGAÇÃO (se necessário)
+// ==============================================================================
+
+// Re-export dos tipos de navegação das OTs
+export type { OTsStackParamList } from '../../navigation/OTsStackNavigator';
+
+// ==============================================================================
+// ✅ ESTRUTURA FINAL DAS TELAS DE OT
 // ==============================================================================
 
 /**
- * Tipos de parâmetros para navegação entre telas de OT
- * Use este tipo nas suas telas para tipagem correta
+ * 🎯 TELAS DISPONÍVEIS:
+ * 
+ * ✅ LISTA DE OTs:
+ * - ListaOTScreen (versão original)
+ * - ListaOTScreenFixed (versão atualizada com Tailwind)
+ * 
+ * ✅ CRIAÇÃO DE OT:
+ * - CriarOTScreen (versão original)
+ * - CriarOTScreenFixed (versão atualizada com fluxo em etapas)
+ * 
+ * ✅ DETALHES DE OT:
+ * - DetalhesOTScreen (nova tela com visualização completa)
+ * 
+ * 🔄 NAVEGAÇÃO:
+ * - OTsStackNavigator (stack navigation para Lista → Detalhes)
+ * 
+ * 🎯 USO RECOMENDADO:
+ * - Use as versões "Fixed" que são as mais atualizadas
+ * - DetalhesOTScreen é a nova tela para visualização
+ * - Todas usam Tailwind CSS e SafeScreenWrapper
  */
-export type OTStackParamList = {
-  ListaOTs: undefined;
-  DetalhesOT: { otId: number };
-  CriarOT: undefined;
-  TransferirOT: { otId: number };
-  FinalizarOT: { otId: number };
-  UploadDocumentos: { otId: number };
-};

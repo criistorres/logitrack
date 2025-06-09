@@ -1,215 +1,445 @@
-// mobile/src/screens/PerfilScreen.tsx - TELA DE PERFIL SIMPLES
+// mobile/src/screens/PerfilScreen.tsx - VERSÃO COMPLETA COM TAILWIND CSS
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { 
   View, 
   Text, 
   TouchableOpacity, 
   ScrollView, 
-  Alert
+  Alert,
+  Switch,
+  Modal
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 
+// ===== IMPORT DO COMPONENTE SAFE AREA COM TAILWIND =====
+import { TabScreenWrapper } from '../components/common/SafeScreenWrapper';
+
 /**
- * 👤 Tela de Perfil - Versão Simples para Tab Navigation
+ * 👤 Tela Perfil - Completa com Tailwind CSS
  * 
- * Funcionalidades:
- * - Exibir dados do usuário logado
+ * ✅ Funcionalidades:
+ * - Informações do usuário
+ * - Configurações do app
+ * - Preferências
  * - Logout seguro
- * - Informações do app
+ * - Modal de confirmações
+ * - Switch para configurações
  */
 export default function PerfilScreen() {
   const { user, logout } = useAuth();
+  
+  // ==============================================================================
+  // 📊 ESTADOS DA TELA
+  // ==============================================================================
+  
+  const [notificacoes, setNotificacoes] = useState(true);
+  const [localizacao, setLocalizacao] = useState(true);
+  const [modoEscuro, setModoEscuro] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   // ==============================================================================
   // 🔧 HANDLERS DE AÇÕES
   // ==============================================================================
   
-  const handleLogout = useCallback(async () => {
-    Alert.alert(
-      'Confirmar Logout',
-      'Tem certeza que deseja sair do aplicativo?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('👤 Fazendo logout do usuário...');
-              await logout();
-            } catch (error) {
-              console.error('❌ Erro no logout:', error);
-              Alert.alert('Erro', 'Erro ao fazer logout. Tente novamente.');
-            }
-          },
-        },
-      ],
-    );
+  const handleLogout = useCallback(() => {
+    setShowLogoutModal(true);
+  }, []);
+
+  const confirmLogout = useCallback(async () => {
+    try {
+      setShowLogoutModal(false);
+      await logout();
+      Alert.alert('Logout', 'Você foi desconectado com sucesso!');
+    } catch (error) {
+      Alert.alert('Erro', 'Erro ao fazer logout. Tente novamente.');
+    }
   }, [logout]);
 
-  const handleSobre = useCallback(() => {
+  const handleEditarPerfil = useCallback(() => {
+    Alert.alert('Editar Perfil', 'Funcionalidade será implementada em breve.');
+  }, []);
+
+  const handleAlterarSenha = useCallback(() => {
+    Alert.alert('Alterar Senha', 'Funcionalidade será implementada em breve.');
+  }, []);
+
+  const handleSuporte = useCallback(() => {
     Alert.alert(
-      'Sobre o LogiTrack',
-      'LogiTrack v1.0.0\n\nSistema de gestão de transporte e logística.\n\nDesenvolvido com ❤️ para facilitar o trabalho dos motoristas.'
+      'Suporte LogiTrack',
+      'Como podemos ajudar?\n\n📞 (11) 9999-9999\n📧 suporte@logitrack.com',
+      [
+        { text: 'Fechar', style: 'cancel' },
+        { text: 'Ligar', onPress: () => Alert.alert('Ligando...') },
+      ]
     );
   }, []);
 
+  const handleSobre = useCallback(() => {
+    setShowInfoModal(true);
+  }, []);
+
   // ==============================================================================
-  // 🎯 RENDERIZAÇÃO PRINCIPAL
+  // 🎯 RENDERIZAÇÃO PRINCIPAL COM TAILWIND
   // ==============================================================================
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1">
+    <TabScreenWrapper withPadding className="bg-gray-50">
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+      >
         
         {/* =====================================================================
-             HEADER DE PERFIL
+             HEADER DO PERFIL
              ===================================================================== */}
-        <View className="bg-white">
-          <View className="items-center py-8 px-4">
-            {/* Avatar do usuário */}
-            <View className="w-24 h-24 bg-blue-500 rounded-full items-center justify-center mb-4">
-              <Text className="text-white text-3xl font-bold">
-                {user?.nome?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || '👤'}
-              </Text>
+        <View className="bg-white rounded-xl p-6 mb-6 shadow-lg">
+          <View className="items-center">
+            {/* Avatar Grande */}
+            <View className="w-24 h-24 bg-primary-100 rounded-full items-center justify-center mb-4">
+              <Ionicons name="person" size={48} color="#2563EB" />
             </View>
             
-            {/* Informações do usuário */}
-            <Text className="text-gray-800 text-xl font-bold mb-1">
+            {/* Informações do Usuário */}
+            <Text className="text-2xl font-bold text-gray-800 mb-1">
               {user?.nome || 'Usuário LogiTrack'}
             </Text>
-            <Text className="text-gray-600 text-base mb-2">
-              {user?.email}
-            </Text>
             
-            {/* Badge de role */}
-            <View className="bg-blue-100 px-3 py-1 rounded-full">
-              <Text className="text-blue-700 text-sm font-semibold capitalize">
-                {user?.role === 'motorista' ? '🚛 Motorista' : 
-                 user?.role === 'logistica' ? '📋 Logística' : 
-                 user?.role === 'admin' ? '⚙️ Administrador' : 'Usuário'}
+            <View className={`
+              px-4 py-2 rounded-full mb-4
+              ${user?.role === 'MOTORISTA' ? 'bg-success-100' : 'bg-primary-100'}
+            `}>
+              <Text className={`
+                text-sm font-semibold
+                ${user?.role === 'MOTORISTA' ? 'text-success-700' : 'text-primary-700'}
+              `}>
+                {user?.role || 'USUÁRIO'}
               </Text>
             </View>
-          </View>
-        </View>
-
-        <View className="p-4">
-          
-          {/* =====================================================================
-               SEÇÃO DE ESTATÍSTICAS RÁPIDAS
-               ===================================================================== */}
-          <View className="bg-white rounded-lg shadow-sm mb-4">
-            <View className="p-4 border-b border-gray-100">
-              <Text className="text-gray-800 text-lg font-bold">
-                Minhas Estatísticas
-              </Text>
-            </View>
-
-            <View className="p-4">
-              <View className="flex-row justify-between">
-                {/* OTs Criadas */}
-                <View className="items-center flex-1">
-                  <Text className="text-2xl font-bold text-blue-500 mb-1">-</Text>
-                  <Text className="text-gray-600 text-sm text-center">OTs Criadas</Text>
-                </View>
-                
-                {/* OTs Finalizadas */}
-                <View className="items-center flex-1">
-                  <Text className="text-2xl font-bold text-green-500 mb-1">-</Text>
-                  <Text className="text-gray-600 text-sm text-center">Finalizadas</Text>
-                </View>
-                
-                {/* Este Mês */}
-                <View className="items-center flex-1">
-                  <Text className="text-2xl font-bold text-purple-500 mb-1">-</Text>
-                  <Text className="text-gray-600 text-sm text-center">Este Mês</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* =====================================================================
-               SEÇÃO DE INFORMAÇÕES
-               ===================================================================== */}
-          <View className="bg-white rounded-lg shadow-sm mb-4">
-            <View className="p-4 border-b border-gray-100">
-              <Text className="text-gray-800 text-lg font-bold">
-                Informações
-              </Text>
-            </View>
-
-            {/* Sobre o App */}
-            <TouchableOpacity 
-              onPress={handleSobre}
-              className="flex-row items-center p-4"
+            
+            {/* Botão Editar Perfil */}
+            <TouchableOpacity
+              className="bg-primary-50 px-6 py-3 rounded-lg border border-primary-200"
+              onPress={handleEditarPerfil}
+              activeOpacity={0.7}
             >
-              <View className="w-10 h-10 bg-purple-100 rounded-full items-center justify-center mr-3">
-                <Text className="text-purple-600 text-lg">ℹ️</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-gray-800 text-base font-semibold">
-                  Sobre o LogiTrack
-                </Text>
-                <Text className="text-gray-500 text-sm">
-                  Versão, informações e suporte
-                </Text>
-              </View>
-              <Text className="text-gray-400 text-lg">→</Text>
+              <Text className="text-primary-700 font-semibold">
+                ✏️ Editar Perfil
+              </Text>
             </TouchableOpacity>
           </View>
+        </View>
 
-          {/* =====================================================================
-               BOTÃO DE LOGOUT
-               ===================================================================== */}
+        {/* =====================================================================
+             SEÇÃO CONTA
+             ===================================================================== */}
+        <View className="bg-white rounded-xl p-4 mb-6 shadow-lg">
+          <Text className="text-lg font-bold text-gray-800 mb-4 px-2">
+            👤 Conta
+          </Text>
+          
+          {/* Alterar Senha */}
           <TouchableOpacity
-            onPress={handleLogout}
-            className="bg-red-500 rounded-lg p-4 items-center shadow-sm"
+            className="flex-row items-center p-3 rounded-lg bg-gray-50 mb-3"
+            onPress={handleAlterarSenha}
+            activeOpacity={0.7}
           >
-            <Text className="text-white text-base font-semibold">
-              Sair do Aplicativo
-            </Text>
+            <View className="w-10 h-10 bg-warning-100 rounded-full items-center justify-center mr-3">
+              <Ionicons name="key-outline" size={20} color="#F59E0B" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-800 font-medium">Alterar Senha</Text>
+              <Text className="text-gray-500 text-sm">Manter conta segura</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#6B7280" />
           </TouchableOpacity>
 
-          {/* Espaçamento final para o tab bar */}
-          <View className="h-6" />
+          {/* Informações Pessoais */}
+          <View className="p-3 rounded-lg bg-gray-50">
+            <View className="flex-row items-center mb-2">
+              <View className="w-10 h-10 bg-primary-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="card-outline" size={20} color="#2563EB" />
+              </View>
+              <Text className="text-gray-800 font-medium">Informações Pessoais</Text>
+            </View>
+            <View className="ml-13">
+              <Text className="text-gray-600 text-sm mb-1">
+                Email: {user?.email || 'Não informado'}
+              </Text>
+              <Text className="text-gray-600 text-sm">
+                ID: #{user?.id || 'N/A'}
+              </Text>
+            </View>
+          </View>
         </View>
+
+        {/* =====================================================================
+             SEÇÃO CONFIGURAÇÕES
+             ===================================================================== */}
+        <View className="bg-white rounded-xl p-4 mb-6 shadow-lg">
+          <Text className="text-lg font-bold text-gray-800 mb-4 px-2">
+            ⚙️ Configurações
+          </Text>
+          
+          {/* Notificações */}
+          <View className="flex-row items-center justify-between p-3 rounded-lg bg-gray-50 mb-3">
+            <View className="flex-row items-center flex-1">
+              <View className="w-10 h-10 bg-accent-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="notifications-outline" size={20} color="#F97316" />
+              </View>
+              <View>
+                <Text className="text-gray-800 font-medium">Notificações</Text>
+                <Text className="text-gray-500 text-sm">Alertas de OTs e entregas</Text>
+              </View>
+            </View>
+            <Switch
+              value={notificacoes}
+              onValueChange={setNotificacoes}
+              trackColor={{ false: '#E5E7EB', true: '#DBEAFE' }}
+              thumbColor={notificacoes ? '#2563EB' : '#9CA3AF'}
+            />
+          </View>
+
+          {/* Localização */}
+          <View className="flex-row items-center justify-between p-3 rounded-lg bg-gray-50 mb-3">
+            <View className="flex-row items-center flex-1">
+              <View className="w-10 h-10 bg-success-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="location-outline" size={20} color="#16A34A" />
+              </View>
+              <View>
+                <Text className="text-gray-800 font-medium">Localização</Text>
+                <Text className="text-gray-500 text-sm">GPS para rastreamento</Text>
+              </View>
+            </View>
+            <Switch
+              value={localizacao}
+              onValueChange={setLocalizacao}
+              trackColor={{ false: '#E5E7EB', true: '#DCFCE7' }}
+              thumbColor={localizacao ? '#16A34A' : '#9CA3AF'}
+            />
+          </View>
+
+          {/* Modo Escuro */}
+          <View className="flex-row items-center justify-between p-3 rounded-lg bg-gray-50">
+            <View className="flex-row items-center flex-1">
+              <View className="w-10 h-10 bg-gray-200 rounded-full items-center justify-center mr-3">
+                <Ionicons name="moon-outline" size={20} color="#6B7280" />
+              </View>
+              <View>
+                <Text className="text-gray-800 font-medium">Modo Escuro</Text>
+                <Text className="text-gray-500 text-sm">Em desenvolvimento</Text>
+              </View>
+            </View>
+            <Switch
+              value={modoEscuro}
+              onValueChange={setModoEscuro}
+              trackColor={{ false: '#E5E7EB', true: '#F3F4F6' }}
+              thumbColor={modoEscuro ? '#6B7280' : '#9CA3AF'}
+              disabled={true}
+            />
+          </View>
+        </View>
+
+        {/* =====================================================================
+             SEÇÃO SUPORTE
+             ===================================================================== */}
+        <View className="bg-white rounded-xl p-4 mb-6 shadow-lg">
+          <Text className="text-lg font-bold text-gray-800 mb-4 px-2">
+            🆘 Suporte
+          </Text>
+          
+          {/* Falar com Suporte */}
+          <TouchableOpacity
+            className="flex-row items-center p-3 rounded-lg bg-gray-50 mb-3"
+            onPress={handleSuporte}
+            activeOpacity={0.7}
+          >
+            <View className="w-10 h-10 bg-primary-100 rounded-full items-center justify-center mr-3">
+              <Ionicons name="help-circle-outline" size={20} color="#2563EB" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-800 font-medium">Falar com Suporte</Text>
+              <Text className="text-gray-500 text-sm">Dúvidas e problemas técnicos</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+          </TouchableOpacity>
+
+          {/* Sobre o App */}
+          <TouchableOpacity
+            className="flex-row items-center p-3 rounded-lg bg-gray-50"
+            onPress={handleSobre}
+            activeOpacity={0.7}
+          >
+            <View className="w-10 h-10 bg-accent-100 rounded-full items-center justify-center mr-3">
+              <Ionicons name="information-circle-outline" size={20} color="#F97316" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-800 font-medium">Sobre o LogiTrack</Text>
+              <Text className="text-gray-500 text-sm">Versão e informações</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+          </TouchableOpacity>
+        </View>
+
+        {/* =====================================================================
+             BOTÃO LOGOUT
+             ===================================================================== */}
+        <TouchableOpacity
+          className="bg-danger-50 p-4 rounded-xl flex-row items-center justify-center border border-danger-200 mb-6"
+          onPress={handleLogout}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="log-out-outline" size={24} color="#DC2626" />
+          <Text className="text-danger-600 font-bold text-lg ml-2">
+            Sair da Conta
+          </Text>
+        </TouchableOpacity>
+
+        {/* Espaçamento final */}
+        <View className="h-6" />
       </ScrollView>
-    </SafeAreaView>
+
+      {/* =====================================================================
+           MODAL DE CONFIRMAÇÃO DE LOGOUT
+           ===================================================================== */}
+      <Modal
+        visible={showLogoutModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center p-4">
+          <View className="bg-white rounded-xl p-6 w-full max-w-sm">
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 bg-danger-100 rounded-full items-center justify-center mb-3">
+                <Ionicons name="log-out-outline" size={32} color="#DC2626" />
+              </View>
+              <Text className="text-xl font-bold text-gray-800 mb-2">
+                Sair da Conta
+              </Text>
+              <Text className="text-gray-600 text-center">
+                Tem certeza que deseja sair? Você precisará fazer login novamente.
+              </Text>
+            </View>
+            
+            <View className="flex-row space-x-3">
+              <TouchableOpacity
+                className="flex-1 bg-gray-100 p-3 rounded-lg"
+                onPress={() => setShowLogoutModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text className="text-gray-700 font-semibold text-center">
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                className="flex-1 bg-danger-500 p-3 rounded-lg"
+                onPress={confirmLogout}
+                activeOpacity={0.7}
+              >
+                <Text className="text-white font-semibold text-center">
+                  Confirmar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* =====================================================================
+           MODAL SOBRE O APP
+           ===================================================================== */}
+      <Modal
+        visible={showInfoModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowInfoModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-xl p-6">
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 bg-primary-100 rounded-full items-center justify-center mb-3">
+                <Ionicons name="car-outline" size={32} color="#2563EB" />
+              </View>
+              <Text className="text-2xl font-bold text-gray-800 mb-2">
+                LogiTrack
+              </Text>
+              <Text className="text-gray-600 text-center mb-4">
+                Sistema de Gestão de Ordens de Transporte
+              </Text>
+            </View>
+            
+            <View className="space-y-2 mb-6">
+              <Text className="text-gray-700">
+                <Text className="font-semibold">Versão:</Text> 1.0.0
+              </Text>
+              <Text className="text-gray-700">
+                <Text className="font-semibold">Build:</Text> 2024.06.09
+              </Text>
+              <Text className="text-gray-700">
+                <Text className="font-semibold">Desenvolvido por:</Text> LogiTrack Team
+              </Text>
+            </View>
+            
+            <TouchableOpacity
+              className="bg-primary-500 p-4 rounded-lg"
+              onPress={() => setShowInfoModal(false)}
+              activeOpacity={0.7}
+            >
+              <Text className="text-white font-semibold text-center">
+                Fechar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </TabScreenWrapper>
   );
 }
 
 // ==============================================================================
-// 📝 TELA SIMPLES MAS FUNCIONAL
+// ✅ CARACTERÍSTICAS DESTA VERSÃO COMPLETA
 // ==============================================================================
 
 /**
- * ✅ FUNCIONALIDADES IMPLEMENTADAS:
+ * 🎯 FUNCIONALIDADES IMPLEMENTADAS:
  * 
- * 1. **Header de Perfil**
- *    - Avatar gerado com inicial do nome
- *    - Nome e email do usuário
- *    - Badge de role
+ * ✅ PERFIL COMPLETO:
+ * - Avatar e informações do usuário
+ * - Edição de perfil (preparado)
+ * - Alteração de senha (preparado)
+ * - Informações pessoais
  * 
- * 2. **Estatísticas**
- *    - Placeholder para futuras métricas
- *    - Layout responsivo
+ * ✅ CONFIGURAÇÕES:
+ * - Switch para notificações
+ * - Switch para localização
+ * - Modo escuro (preparado)
+ * - Configurações salvas no estado
  * 
- * 3. **Informações**
- *    - Sobre o app
- *    - Preparado para mais opções
+ * ✅ SUPORTE:
+ * - Contato com suporte
+ * - Informações do app
+ * - Modal sobre o LogiTrack
  * 
- * 4. **Logout Seguro**
- *    - Confirmação antes de sair
- *    - Integração com AuthContext
+ * ✅ LOGOUT SEGURO:
+ * - Modal de confirmação
+ * - Feedback visual
+ * - Integração com AuthContext
  * 
- * 🔄 FUTURAS IMPLEMENTAÇÕES:
- * - Edição de perfil
- * - Configurações detalhadas
- * - Estatísticas reais
- * - Upload de foto
+ * ✅ TAILWIND CSS 100%:
+ * - Todas as classes Tailwind
+ * - Cores personalizadas LogiTrack
+ * - Componentes consistentes
+ * - Zero estilos inline
+ * 
+ * ✅ UX PREMIUM:
+ * - Modais animados
+ * - Switches interativos
+ * - Feedback visual consistente
+ * - Navegação fluida
+ * 
+ * 🚀 RESULTADO: Tela de perfil profissional e completa!
  */

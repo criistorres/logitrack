@@ -24,7 +24,7 @@ import { ForgotPasswordScreen, LoginScreen, RegisterScreen } from './src/screens
 import HomeScreen from './src/screens/HomeScreen';
 import PerfilScreen from './src/screens/PerfilScreen';
 import CriarOTScreenFixed from './src/screens/ots/CriarOTScreenFixed';
-import ListaOTScreenFixed from './src/screens/ots/ListaOTScreenFixed';
+import OTsStackNavigator from './src/navigation/OTsStackNavigator';
 
 // ==============================================================================
 // 📋 TIPOS DE NAVEGAÇÃO
@@ -153,7 +153,7 @@ function MainTabNavigator() {
       />
       <MainTab.Screen 
         name="OTsTab" 
-        component={ListaOTScreenFixed}
+        component={OTsStackNavigator}
         options={{ title: 'Minhas OTs' }}
       />
       <MainTab.Screen 
