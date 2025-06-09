@@ -187,25 +187,41 @@ class AuthService {
   }
 
   /**
-   * Realizar logout
-   */
-  async logout(): Promise<void> {
-    try {
-      console.log('🚪 AuthService: Fazendo logout...');
-      // Chamar endpoint de logout (se existir)
-      await apiService.post('/auth/logout/');
-    } catch (error) {
-      console.error('Erro ao fazer logout no servidor:', error);
-    } finally {
-      // Limpar dados locais independente do resultado
-      await AsyncStorage.multiRemove([
-        '@LogiTrack:token',
-        '@LogiTrack:refreshToken',
-        '@LogiTrack:user',
-      ]);
-      console.log('✅ AuthService: Dados locais limpos');
+ * 🚪 Realizar logout - VERSÃO CORRIGIDA
+ */
+async logout(): Promise<void> {
+  try {
+    console.log('🚪 AuthService: Fazendo logout...');
+    
+    // CORREÇÃO: Pegar refresh token do AsyncStorage
+    const refreshToken = await AsyncStorage.getItem('@LogiTrack:refreshToken');
+    
+    if (refreshToken) {
+      console.log('🚪 AuthService: Enviando refresh token para logout...');
+      
+      // CORREÇÃO: Enviar refresh token no body da requisição
+      await apiService.post('/auth/logout/', {
+        refresh: refreshToken
+      });
+      
+      console.log('✅ AuthService: Logout realizado no servidor');
+    } else {
+      console.log('⚠️ AuthService: Nenhum refresh token encontrado, fazendo logout local apenas');
     }
+    
+  } catch (error) {
+    console.error('❌ Erro ao fazer logout no servidor:', error);
+    // Continuar com logout local mesmo se o servidor falhar
+  } finally {
+    // Limpar dados locais independente do resultado
+    await AsyncStorage.multiRemove([
+      '@LogiTrack:token',
+      '@LogiTrack:refreshToken',
+      '@LogiTrack:user',
+    ]);
+    console.log('✅ AuthService: Dados locais limpos');
   }
+}
   
   /**
    * Obter usuário atual do AsyncStorage
