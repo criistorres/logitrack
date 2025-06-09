@@ -1,5 +1,5 @@
 // Configurações da API (para uso futuro)
-const DEVELOPMENT_IP = '192.168.0.8'
+const DEVELOPMENT_IP = '192.168.0.2'
 
 // Configurações da API
 export const API_CONFIG = {

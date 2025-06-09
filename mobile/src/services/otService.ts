@@ -1,6 +1,7 @@
 // mobile/src/services/otService.ts - VERSÃO CORRIGIDA
 
 import { apiService } from './api';
+import api from './api';
 
 // ==============================================================================
 // 📋 TIPOS E INTERFACES PARA OTs - CORRIGIDOS
@@ -387,23 +388,54 @@ export const otService = {
     }
   },
 
-  /**
- * 📎 Upload de arquivo para uma OT
+
+/**
+ * 📎 Upload de arquivo para uma OT - VERSÃO SIMPLES CORRIGIDA
  */
-  async uploadArquivo(otId: number, dados: UploadArquivoRequest): Promise<UploadArquivoResponse> {
+async uploadArquivo(otId: number, dados: UploadArquivoRequest): Promise<UploadArquivoResponse> {
   try {
-    console.log(`📎 OT Service: Fazendo upload de arquivo para OT ${otId}...`);
+    console.log(`📎 *** OT SERVICE UPLOAD INICIADO ***`);
+    console.log(`📎 OT ID: ${otId}`);
+    console.log(`📎 Dados recebidos:`, {
+      tipo: dados.tipo,
+      descricao: dados.descricao,
+      arquivo: {
+        uri: dados.arquivo.uri,
+        type: dados.arquivo.type,
+        name: dados.arquivo.name
+      }
+    });
     
+    console.log('📎 Criando FormData...');
     const formData = new FormData();
-    formData.append('arquivo', dados.arquivo);
+    
+    // Formato correto para React Native
+    formData.append('arquivo', {
+      uri: dados.arquivo.uri,
+      type: dados.arquivo.type,
+      name: dados.arquivo.name,
+    } as any);
+    
     formData.append('tipo', dados.tipo);
+    
     if (dados.descricao) {
       formData.append('descricao', dados.descricao);
     }
     
-    const response = await apiService.post(`/ots/${otId}/arquivos/`, formData); // sem headers manuais
+    console.log('📎 FormData criado, fazendo upload...');
     
-    console.log('✅ OT Service: Upload realizado com sucesso');
+    // CORREÇÃO: Usar a instância 'api' que já existe no projeto
+    // Em vez de apiService.post(), usar api.post() diretamente com headers
+    const response = await api.post(`/ots/${otId}/arquivos/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 30000,
+    });
+    
+    console.log('✅ *** UPLOAD REALIZADO COM SUCESSO ***');
+    console.log('✅ Status:', response.status);
+    console.log('✅ Data:', response.data);
     
     return {
       success: true,
@@ -412,13 +444,17 @@ export const otService = {
     };
     
   } catch (error: any) {
-    console.error('❌ OT Service: Erro no upload:', error);
+    console.error('❌ *** ERRO NO UPLOAD ***');
+    console.error('❌ Error message:', error.message);
+    console.error('❌ Response status:', error.response?.status);
+    console.error('❌ Response data:', error.response?.data);
     
     if (error.response?.status === 400) {
+      const errorData = error.response.data;
       return {
         success: false,
-        message: 'Arquivo inválido ou dados incorretos',
-        errors: error.response.data
+        message: errorData.message || 'Arquivo inválido ou dados incorretos',
+        errors: errorData.errors || errorData
       };
     } else if (error.response?.status === 413) {
       return {
@@ -430,7 +466,7 @@ export const otService = {
       return {
         success: false,
         message: 'Erro ao enviar arquivo. Tente novamente.',
-        errors: { network: ['Erro de rede'] }
+        errors: { upload: ['Erro no upload'] }
       };
     }
   }
