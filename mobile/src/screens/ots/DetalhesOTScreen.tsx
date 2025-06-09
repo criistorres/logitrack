@@ -29,6 +29,7 @@ import { TabScreenWrapper } from '../../components/common/SafeScreenWrapper';
 type OTsStackParamList = {
   ListaOTs: undefined;
   DetalhesOT: { otId: number };
+  AtualizarStatus: { ot: OT };
 };
 
 type DetalhesOTRouteProp = RouteProp<OTsStackParamList, 'DetalhesOT'>;
@@ -167,8 +168,9 @@ export default function DetalhesOTScreen() {
   // ==============================================================================
   
   const handleAtualizarStatus = useCallback(() => {
-    Alert.alert('Atualizar Status', 'Funcionalidade será implementada em breve.');
-  }, []);
+    if (!ot) return;
+    navigation.navigate('AtualizarStatus', { ot });
+  }, [ot, navigation]);
 
   const handleTransferir = useCallback(() => {
     Alert.alert('Transferir OT', 'Funcionalidade será implementada em breve.');

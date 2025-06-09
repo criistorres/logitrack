@@ -6,6 +6,11 @@ import { createStackNavigator } from '@react-navigation/stack';
 // Importar telas de OTs
 import ListaOTScreenFixed from '../screens/ots/ListaOTScreenFixed';
 import DetalhesOTScreen from '../screens/ots/DetalhesOTScreen';
+import AtualizarStatusScreen from '../screens/ots/AtualizarStatusScreen';
+import FinalizarOTScreen from '../screens/ots/FinalizarOTScreen';
+
+// Importar tipos necessários
+import { OT } from '../services';
 
 // ==============================================================================
 // 📋 TIPOS DE NAVEGAÇÃO PARA OTs
@@ -14,6 +19,8 @@ import DetalhesOTScreen from '../screens/ots/DetalhesOTScreen';
 export type OTsStackParamList = {
   ListaOTs: undefined;
   DetalhesOT: { otId: number };
+  AtualizarStatus: { ot: OT };
+  FinalizarOT: { ot: OT };
 };
 
 // ==============================================================================
@@ -64,6 +71,23 @@ export default function OTsStackNavigator() {
         component={DetalhesOTScreen}
         options={{
           title: 'Detalhes da OT',
+          gestureDirection: 'horizontal',
+        }}
+      />
+      
+      <OTsStack.Screen 
+        name="AtualizarStatus" 
+        component={AtualizarStatusScreen}
+        options={{
+          title: 'Atualizar Status',
+          gestureDirection: 'horizontal',
+        }}
+      />
+      <OTsStack.Screen 
+        name="FinalizarOT" 
+        component={FinalizarOTScreen}
+        options={{
+          title: 'Finalizar OT',
           gestureDirection: 'horizontal',
         }}
       />

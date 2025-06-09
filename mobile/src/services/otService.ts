@@ -122,6 +122,49 @@ export interface AtualizarStatusRequest {
   longitude?: number;
 }
 
+
+// Adições para mobile/src/services/otService.ts - UPLOAD E FINALIZAR
+
+// ==============================================================================
+// 🆕 NOVOS TIPOS PARA UPLOAD E FINALIZAÇÃO
+// ==============================================================================
+
+export interface UploadArquivoRequest {
+  arquivo: any; // File object
+  tipo: 'CANHOTO' | 'FOTO_ENTREGA' | 'COMPROVANTE' | 'OUTRO';
+  descricao?: string;
+}
+
+export interface UploadArquivoResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    data: {
+      id: number;
+      arquivo: string;
+      tipo: string;
+      descricao: string;
+      data_envio: string;
+    };
+  };
+  errors?: any;
+}
+
+export interface FinalizarOTRequest {
+  observacoes_entrega?: string;
+  latitude_entrega?: number;
+  longitude_entrega?: number;
+  endereco_entrega_real?: string;
+}
+
+export interface FinalizarOTResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    data: OT;
+  };
+  errors?: any;
+}
 // ==============================================================================
 // 🚚 SERVIÇO DE ORDENS DE TRANSPORTE - CORRIGIDO
 // ==============================================================================
@@ -310,51 +353,7 @@ export const otService = {
     }
   },
   
-  // ==============================================================================
-  // 🏁 FINALIZAR OT
-  // ==============================================================================
-  
-  async finalizarOT(id: number, dados: {
-    observacoes_entrega?: string;
-    latitude_entrega?: number;
-    longitude_entrega?: number;
-    endereco_entrega_real?: string;
-  }): Promise<CriarOTResponse> {
-    try {
-      console.log(`🏁 OT Service: Finalizando OT ${id}:`, dados);
-      
-      const response = await apiService.post<{
-        success: boolean;
-        message: string;
-        data: OT;
-      }>(`/ots/${id}/finalizar/`, dados);
-      
-      console.log('✅ OT Service: OT finalizada:', response.data.data?.numero_ot);
-      
-      return {
-        success: true,
-        message: 'OT finalizada com sucesso!',
-        data: response.data
-      };
-      
-    } catch (error: any) {
-      console.error('❌ OT Service: Erro ao finalizar OT:', error);
-      
-      if (error.response?.status === 400) {
-        return {
-          success: false,
-          message: 'Não é possível finalizar esta OT',
-          errors: error.response.data
-        };
-      } else {
-        return {
-          success: false,
-          message: 'Erro ao finalizar OT',
-          errors: error.response?.data || { network: ['Erro de rede'] }
-        };
-      }
-    }
-  },
+
   
   // ==============================================================================
   // 🔄 TRANSFERIR OT
@@ -386,7 +385,153 @@ export const otService = {
         errors: error.response?.data || { network: ['Erro de rede'] }
       };
     }
+  },
+
+  /**
+ * 📎 Upload de arquivo para uma OT
+ */
+  async uploadArquivo(otId: number, dados: UploadArquivoRequest): Promise<UploadArquivoResponse> {
+  try {
+    console.log(`📎 OT Service: Fazendo upload de arquivo para OT ${otId}...`);
+    
+    const formData = new FormData();
+    formData.append('arquivo', dados.arquivo);
+    formData.append('tipo', dados.tipo);
+    if (dados.descricao) {
+      formData.append('descricao', dados.descricao);
+    }
+    
+    const response = await apiService.post(`/ots/${otId}/arquivos/`, formData); // sem headers manuais
+    
+    console.log('✅ OT Service: Upload realizado com sucesso');
+    
+    return {
+      success: true,
+      message: 'Arquivo enviado com sucesso!',
+      data: response.data
+    };
+    
+  } catch (error: any) {
+    console.error('❌ OT Service: Erro no upload:', error);
+    
+    if (error.response?.status === 400) {
+      return {
+        success: false,
+        message: 'Arquivo inválido ou dados incorretos',
+        errors: error.response.data
+      };
+    } else if (error.response?.status === 413) {
+      return {
+        success: false,
+        message: 'Arquivo muito grande. Máximo permitido: 10MB',
+        errors: { arquivo: ['Arquivo muito grande'] }
+      };
+    } else {
+      return {
+        success: false,
+        message: 'Erro ao enviar arquivo. Tente novamente.',
+        errors: { network: ['Erro de rede'] }
+      };
+    }
   }
+},
+
+
+/**
+ * 🏁 Finalizar OT (marcar como entregue)
+ */
+async finalizarOT(otId: number, dados: FinalizarOTRequest): Promise<FinalizarOTResponse> {
+  try {
+    console.log(`🏁 OT Service: Finalizando OT ${otId}...`);
+    
+    const response = await apiService.post<{
+      success: boolean;
+      message: string;
+      data: OT;
+    }>(`/ots/${otId}/finalizar/`, dados);
+    
+    console.log('✅ OT Service: OT finalizada com sucesso');
+    
+    return {
+      success: true,
+      message: 'OT finalizada com sucesso!',
+      data: response.data
+    };
+    
+  } catch (error: any) {
+    console.error('❌ OT Service: Erro ao finalizar OT:', error);
+    
+    if (error.response?.status === 400) {
+      const errorData = error.response.data;
+      
+      // Erro específico de falta de documentos
+      if (errorData.errors?.arquivos) {
+        return {
+          success: false,
+          message: 'É obrigatório anexar documentos antes de finalizar',
+          errors: errorData.errors
+        };
+      }
+      
+      return {
+        success: false,
+        message: errorData.message || 'Dados inválidos para finalização',
+        errors: errorData.errors || errorData
+      };
+    } else if (error.response?.status === 403) {
+      return {
+        success: false,
+        message: 'Você não tem permissão para finalizar esta OT',
+        errors: { permission: ['Sem permissão'] }
+      };
+    } else {
+      return {
+        success: false,
+        message: 'Erro ao finalizar OT. Tente novamente.',
+        errors: { network: ['Erro de rede'] }
+      };
+    }
+  }
+},
+
+/**
+ * 📋 Verificar se OT pode ser finalizada
+ */
+async verificarSeOTPodeSerFinalizada(otId: number): Promise<{
+  pode: boolean;
+  motivos: string[];
+  arquivos_count: number;
+}> {
+  try {
+    const response = await this.obterDetalhesOT(otId);
+    
+    if (response.success && response.data?.data) {
+      const ot = response.data.data;
+      
+      return {
+        pode: ot.pode_ser_finalizada,
+        motivos: ot.motivo_nao_finalizar || [],
+        arquivos_count: ot.arquivos_count
+      };
+    }
+    
+    return {
+      pode: false,
+      motivos: ['Erro ao verificar OT'],
+      arquivos_count: 0
+    };
+    
+  } catch (error) {
+    return {
+      pode: false,
+      motivos: ['Erro de conexão'],
+      arquivos_count: 0
+    };
+  }
+}
+  
 };
+
+
 
 export default otService;
