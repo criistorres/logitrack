@@ -1,29 +1,23 @@
-// mobile/src/screens/ots/CriarOTScreenFixed.tsx - VERSÃO COMPLETA COM TAILWIND CSS
-
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  TextInput, 
   TouchableOpacity, 
   ScrollView, 
+  TextInput,
   Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import * as Location from 'expo-location';
-import { Ionicons } from '@expo/vector-icons';
 
-// ==============================================================================
-// 🆕 IMPORTS DA API
-// ==============================================================================
-import { otService, CriarOTRequest } from '../../services';
-
-// ===== IMPORT DO COMPONENTE SAFE AREA COM TAILWIND =====
+// ===== IMPORTS DO PROJETO =====
 import { TabScreenWrapper } from '../../components/common/SafeScreenWrapper';
+import { otService, CriarOTRequest } from '../../services';
 
 // ==============================================================================
 // 📋 TIPOS DE NAVEGAÇÃO
@@ -36,18 +30,48 @@ type MainTabParamList = {
   PerfilTab: undefined;
 };
 
-type CriarOTNavigationProp = BottomTabNavigationProp<MainTabParamList>;
+type OTsStackParamList = {
+  ListaOTs: undefined;
+  DetalhesOT: { otId: number };
+  AtualizarStatus: { ot: any };
+  FinalizarOT: { ot: any };
+};
+
+type CriarOTNavigationProp = BottomTabNavigationProp<MainTabParamList, 'CriarTab'>;
+
+// ==============================================================================
+// 📋 INTERFACES
+// ==============================================================================
+
+interface DadosOT {
+  cliente_nome: string;
+  endereco_entrega: string;
+  cidade_entrega: string;
+  observacoes: string;
+  latitude_origem?: number;
+  longitude_origem?: number;
+  endereco_origem?: string;
+}
 
 /**
- * ➕ Tela Criar OT - Completa com Tailwind CSS
+ * 🚚 Tela Criar OT - Versão Completa com Validação de OT Única
  * 
- * ✅ Funcionalidades:
- * - Fluxo de criação em etapas
- * - Geolocalização automática
- * - Validações em tempo real
- * - Feedback visual premium
- * - Integração com API
- * - Progress indicator
+ * ✅ FUNCIONALIDADES IMPLEMENTADAS:
+ * - Verificação se motorista pode criar OT (regra: 1 OT ativa por motorista)
+ * - Fluxo em 5 etapas com validações
+ * - Geolocalização automática na primeira etapa
+ * - Redirecionamento para DetalhesOT após criação
+ * - Tratamento completo de erros
+ * - UX otimizada para todos os cenários
+ * 
+ * 🚫 REGRA DE NEGÓCIO:
+ * - Motorista só pode ter 1 OT ativa (INICIADA, EM_CARREGAMENTO, EM_TRANSITO)
+ * - Se já tem OT ativa: mostra tela de bloqueio com navegação para a OT
+ * - Se pode criar: mostra formulário completo
+ * 
+ * 🎯 FLUXO PÓS-CRIAÇÃO:
+ * - Sucesso: Alert com botão "Ver Detalhes" → navega para DetalhesOT
+ * - Erro: Mensagem específica + re-verificação se necessário
  */
 export default function CriarOTScreenFixed() {
   const navigation = useNavigation<CriarOTNavigationProp>();

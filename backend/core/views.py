@@ -1150,6 +1150,75 @@ class BuscarOTView(APIView):
             'total': len(queryset)
         })
 
+class PodeCreateOTView(APIView):
+    """
+    🎯 PROPÓSITO: Verificar se motorista pode criar nova OT
+    
+    GET /api/ots/pode-criar/ - Verifica se motorista tem OT ativa
+    
+    📋 REGRA DE NEGÓCIO:
+    - Motorista só pode ter 1 OT ativa (não finalizada) por vez
+    - Status finais: ENTREGUE, ENTREGUE_PARCIAL, CANCELADA
+    - Status ativos: INICIADA, EM_CARREGAMENTO, EM_TRANSITO
+    
+    🔍 RESPOSTA:
+    {
+        "pode_criar": false,
+        "motivo": "Você já possui uma OT ativa",
+        "ot_ativa": {
+            "id": 123,
+            "numero_ot": "OT20250609001",
+            "status": "EM_TRANSITO",
+            "cliente_nome": "Cliente ABC"
+        }
+    }
+    """
+    
+    permission_classes = [permissions.IsAuthenticated, CanCreateOT]
+    
+    def get(self, request):
+        """
+        Verifica se motorista pode criar nova OT.
+        """
+        print(f"🚫 PODE CRIAR OT: Verificação para {request.user.email}")
+        
+        # Buscar OTs ativas do motorista
+        ots_ativas = OrdemTransporte.objects.filter(
+            motorista_atual=request.user,
+            status__in=['INICIADA', 'EM_CARREGAMENTO', 'EM_TRANSITO'],
+            ativa=True
+        ).select_related('motorista_atual', 'motorista_criador')
+        
+        print(f"🚫 OTs ativas encontradas: {ots_ativas.count()}")
+        
+        if ots_ativas.exists():
+            # Tem OT ativa - não pode criar
+            ot_ativa = ots_ativas.first()
+            
+            print(f"❌ Motorista já tem OT ativa: {ot_ativa.numero_ot}")
+            
+            return Response({
+                'pode_criar': False,
+                'motivo': 'Você já possui uma Ordem de Transporte ativa. Finalize-a antes de criar uma nova.',
+                'ot_ativa': {
+                    'id': ot_ativa.id,
+                    'numero_ot': ot_ativa.numero_ot,
+                    'status': ot_ativa.status,
+                    'status_display': ot_ativa.get_status_display(),
+                    'cliente_nome': ot_ativa.cliente_nome,
+                    'data_criacao': ot_ativa.data_criacao,
+                }
+            }, status=status.HTTP_200_OK)
+        else:
+            # Pode criar nova OT
+            print(f"✅ Motorista pode criar nova OT")
+            
+            return Response({
+                'pode_criar': True,
+                'motivo': 'Nenhuma OT ativa encontrada. Você pode criar uma nova.',
+                'ot_ativa': None
+            }, status=status.HTTP_200_OK)
+
 
 # ==============================================================================
 # 📊 VIEWS DE RELATÓRIOS E ESTATÍSTICAS

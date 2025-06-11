@@ -88,420 +88,335 @@
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
   - **Descrição**: Views completas para registro, login, logout com serializers validados
   - **Validação**: Postman/curl funcionando, tokens gerados, validações ativas
-  - **Arquivos**: `accounts/views.py`, `accounts/serializers.py`, `accounts/urls.py`
+  - **Arquivos**: `accounts/views.py`, `accounts/serializers.py`
 
-- [x] **Sistema de reset de senha com código**
+- [x] **Sistema de reset de senha por código**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Código de 6 dígitos via email, expiração 30min, máximo 3 tentativas
-  - **Validação**: Email enviado, código válido funciona, códigos expirados rejeitados
-  - **Arquivos**: `accounts/models.py` (PasswordResetToken), `accounts/email_utils.py`
+  - **Descrição**: Gera código de 6 dígitos, valida por 15 minutos, permite reset seguro
+  - **Validação**: Código gerado, validação funciona, senha atualizada com sucesso
+  - **Arquivos**: `accounts/models.py` (PasswordResetCode), endpoints específicos
 
-- [x] **Gerenciamento de usuários (admin)**
+- [x] **Middleware de validação de token**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: CRUD de usuários para logística/admin, ativação/desativação
-  - **Validação**: Interface admin funciona, permissões respeitadas, ações funcionam
-  - **Arquivos**: `accounts/permissions.py`, views para gerenciamento
+  - **Descrição**: Middleware customizado valida JWT em rotas protegidas
+  - **Validação**: Rotas protegidas inacessíveis sem token válido
+  - **Arquivos**: `logitrack_backend/middleware.py`
 
-- [x] **Sistema de permissões avançado**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Permissões customizadas por role, validações de acesso
-  - **Validação**: Motoristas acessam apenas suas OTs, logística/admin acessam tudo
-  - **Arquivos**: `accounts/permissions.py` com classes completas
+#### **📱 Mobile (React Native + Expo)**
+- [x] **Telas de autenticação (Login/Register/ForgotPassword)**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: UI completa para login, registro e recuperação de senha
+  - **Validação**: Navegação funciona, integração com API, validações de formulário
+  - **Arquivos**: `mobile/src/screens/auth/`
 
-- [x] **Templates de email profissionais**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Templates HTML/TXT para reset de senha com código
-  - **Validação**: Emails enviados com formatação profissional
-  - **Arquivos**: `templates/emails/password_reset_code.html`, `.txt`
+- [x] **Context de autenticação (AuthContext)**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Gerenciamento global de estado de autenticação, persistência de token
+  - **Validação**: Login persiste entre sessões, logout limpa estado, navigation guards
+  - **Arquivos**: `mobile/src/contexts/AuthContext.tsx`
 
-#### **📱 Mobile (React Native)**
-- [x] **Telas mobile de autenticação**
-  - **Data**: 02/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Login, registro, esqueci senha com validações e UX profissional
-  - **Validação**: Fluxo completo funciona, validações em tempo real, navegação fluida
+- [x] **Integração com API Django**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: AuthService integrado com endpoints Django, tratamento de erros
+  - **Validação**: Login/logout/register funcionando, refresh token automático
+  - **Arquivos**: `mobile/src/services/authService.ts`
 
-#### **🌐 Frontend (Next.js)**
-- [x] **Interface web de login**
+#### **🌐 Frontend (Next.js) - Preparação**
+- [x] **Estrutura base de autenticação**
   - **Data**: 04/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Páginas SSR para login, registro admin, reset de senha para logística
-  - **Validação**: SSR funciona, autenticação integrada, redirecionamentos corretos
+  - **Descrição**: Páginas de login preparadas, estrutura de middleware
+  - **Validação**: Routing básico funciona, estrutura preparada para integração
+  - **Arquivos**: `frontend/pages/auth/`, `frontend/lib/auth.ts`
 
-**📊 Progresso Etapa 1.2**: 7/7 itens | **Status**: ✅ Concluído
+**📊 Progresso Etapa 1.2**: 7/7 itens  | **Status**: ✅ Concluído
 
 ---
 
-### **✅ Etapa 1.3: Core - Ordens de Transporte**
-*Objetivo: Sistema central de OTs funcionando com CRUD completo e funcionalidades essenciais*
+### **✅ Etapa 1.3: Funcionalidades Core de OTs**
+*Objetivo: CRUD completo de Ordens de Transporte com todas as funcionalidades avançadas*
 
 #### **🔧 Backend (Django + DRF)**
-
-##### **Modelos de Dados**
-- [x] **Modelo OrdemTransporte**
+- [x] **Modelo OT completo**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Modelo principal com status, motoristas, datas, localizações, observações
-  - **Validação**: Migrações aplicadas, admin interface funcional, relacionamentos corretos
-  - **Arquivos**: `core/models.py` - modelo completo com propriedades e métodos
+  - **Descrição**: Modelo com todos os campos, validações, relacionamentos, propriedades calculadas
+  - **Validação**: Migrações aplicadas, admin funcional, validações robustas
+  - **Arquivos**: `core/models.py` - modelo OrdemTransporte
 
-- [x] **Modelo NotaFiscal (Simplificado)**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído (Sem NF - Simplificado)
-  - **Descrição**: Sistema simplificado sem notas fiscais, foco na operação de transporte
-  - **Validação**: Modelo OT funciona sem complexidade de NFs
-  - **Observação**: **DECISÃO ARQUITETURAL**: Sistema simplificado sem NFs para MVP
-
-- [x] **Modelo Arquivo**
+- [x] **API CRUD de OTs (/api/ots/)**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Sistema de upload (canhotos, fotos, comprovantes) com categorização
-  - **Validação**: Upload funciona, tipos de arquivo validados, preview disponível
-  - **Arquivos**: `core/models.py` - modelo Arquivo completo
+  - **Descrição**: ViewSet completo com paginação, filtros, permissões por role
+  - **Validação**: GET/POST/PUT/DELETE funcionando, serializers validados
+  - **Testado**: [x] Postman [x] REST Client [ ] Frontend [ ] Mobile
 
-- [x] **Modelo TransferenciaOT**
+- [x] **Filtros avançados (status, motorista, data)**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Histórico de transferências entre motoristas com auditoria completa + sistema de aceitação
-  - **Validação**: Log de todas as transferências, motorista origem/destino corretos, aceitação funcionando
-  - **Arquivos**: `core/models.py` - modelo com status AGUARDANDO_ACEITACAO
+  - **Descrição**: Django-filter implementado com filtros por múltiplos campos
+  - **Validação**: Queries otimizadas, resultados corretos, combinações de filtros
+  - **Testado**: [x] API Direct [ ] Frontend [ ] Mobile
 
-- [x] **Modelo AtualizacaoOT**
+- [x] **Permissões por role (motorista/logística/admin)**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Timeline completa de eventos da OT para auditoria
-  - **Validação**: Todas as mudanças são registradas com usuário e timestamp
-  - **Arquivos**: `core/models.py` - modelo completo para auditoria
+  - **Descrição**: Motorista vê apenas suas OTs, logística/admin veem todas
+  - **Validação**: Isolamento de dados por usuário, ações restritas por role
+  - **Testado**: [x] Postman com múltiplos usuários
 
-- [x] **Configuração de relacionamentos**
+- [x] **Sistema de timeline/auditoria completo**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: ForeignKeys, related_names, cascades configurados corretamente
-  - **Validação**: Queries reversas funcionam, performance otimizada, relacionamentos corretos
+  - **Descrição**: Modelo AtualizacaoOT registra todas as mudanças com usuário e timestamp
+  - **Validação**: Histórico completo de mudanças, API de timeline funcional
+  - **Arquivos**: `core/models.py` - AtualizacaoOT
 
-##### **APIs RESTful**
-- [x] **`POST /api/ots/` - Criar OT**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Endpoint para motorista criar nova OT com geolocalização automática
-  - **Validação**: Serializer valida dados, número OT gerado, status inicial correto
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+#### **📱 Mobile (React Native + Expo) - TELAS IMPLEMENTADAS**
+- [x] **Tela Lista de OTs (ListaOTScreen + ListaOTScreenFixed)**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Listagem com filtros, pull-to-refresh, paginação, cards otimizados
+  - **Validação**: Performance boa, navegação funcional, dados reais da API
+  - **Arquivos**: `mobile/src/screens/ots/ListaOTScreen.tsx`
 
-- [x] **`GET /api/ots/` - Listar OTs**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Lista com filtros por motorista, status, data, paginação automática
-  - **Validação**: Permissions respeitadas, apenas OTs do motorista ou todas (logística)
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+- [x] **Tela Criar OT (CriarOTScreen + CriarOTScreenFixed)**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Fluxo em 5 etapas: GPS → Cliente → Entrega → Observações → Confirmação
+  - **Validação**: Geolocalização funciona, validações em cada etapa, criação via API
+  - **Arquivos**: `mobile/src/screens/ots/CriarOTScreenFixed.tsx`
 
-- [x] **`GET /api/ots/{id}/` - Detalhes da OT**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Dados completos com arquivos, histórico de transferências, timeline
-  - **Validação**: Include de relacionamentos, performance otimizada, permissões respeitadas
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+- [x] **Tela Detalhes OT (DetalhesOTScreen)**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Visualização completa: dados, status, timeline, botões de ação
+  - **Validação**: Dados carregados da API, timeline funcional, navegação para ações
+  - **Arquivos**: `mobile/src/screens/ots/DetalhesOTScreen.tsx`
 
-- [x] **`PATCH /api/ots/{id}/` - Atualizar OT**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Atualizar status, observações, localização com validações de transição
-  - **Validação**: Apenas transições válidas permitidas, audit log gerado
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+- [x] **Tela Atualizar Status (AtualizarStatusScreen)**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Fluxo guiado para mudança de status com observações e localização
+  - **Validação**: Validações de transição, API integrada, feedback visual
+  - **Arquivos**: `mobile/src/screens/ots/AtualizarStatusScreen.tsx`
 
-- [x] **`PATCH /api/ots/{id}/status/` - Atualizar Status**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Endpoint específico para mudanças de status com validações
-  - **Validação**: Transições validadas, histórico correto gerado
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+- [x] **Tela Finalizar OT (FinalizarOTScreen)**
+  - **Data**: 09/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Upload obrigatório de documentos, finalização com geolocalização
+  - **Validação**: Upload funcional, validação de documentos, finalização via API
+  - **Arquivos**: `mobile/src/screens/ots/FinalizarOTScreen.tsx`
 
-- [x] **`POST /api/ots/{id}/arquivos/` - Upload de Arquivos**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Upload de canhotos, fotos, comprovantes para OT
-  - **Validação**: Tipos de arquivo validados, metadata capturada, permissões OK
-  - **Testado**: [x] Curl [ ] Frontend [ ] Mobile
+- [x] **Navigation Stack OTs (OTsStackNavigator)**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Navegação estruturada: Lista → Detalhes → Ações (Atualizar/Finalizar)
+  - **Validação**: Transições suaves, parâmetros corretos, back navigation
+  - **Arquivos**: `mobile/src/navigation/OTsStackNavigator.tsx`
 
-- [x] **`GET /api/ots/buscar/` - Buscar por Critérios**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Busca OTs por número, cliente, status, motorista, datas
-  - **Validação**: Busca eficiente, permissions respeitadas, filtros funcionam
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+- [x] **Service Layer Mobile (otService)**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Camada de serviço completa para todas as operações de OT
+  - **Validação**: CRUD completo, upload de arquivos, tratamento de erros
+  - **Arquivos**: `mobile/src/services/otService.ts`
 
-- [x] **`POST /api/ots/{id}/transferir/` - Transferir OT**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Sistema completo de transferência com aceitação
-  - **Validação**: Fluxos corretos: direta, solicitação, aprovação logística
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
-
-- [x] **`POST /api/ots/{id}/finalizar/` - Finalizar OT**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Finaliza OT como entregue com validação de documentos obrigatórios
-  - **Validação**: Não permite finalizar sem arquivos, dados de entrega capturados
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
-
-##### **Sistema de Transferências Avançado**
-- [x] **`GET /api/ots/transferencias/minhas/` - Minhas Transferências**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Lista transferências categorizadas para o motorista logado
-  - **Validação**: Categorização automática: para aceitar, aguardando aprovação, etc.
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
-
-- [x] **`POST /api/ots/transferencias/{id}/aceitar/` - Aceitar Transferência**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Motorista destino aceita transferência direta
-  - **Validação**: Apenas motorista destino pode aceitar, OT transferida automaticamente
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
-
-- [x] **`POST /api/ots/transferencias/{id}/recusar/` - Recusar Transferência**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Motorista destino recusa transferência com motivo obrigatório
-  - **Validação**: OT continua com motorista original, motivo registrado
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
-
-- [x] **`POST /api/ots/transferencias/{id}/cancelar/` - Cancelar Transferência**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Cancela transferência pendente (quem solicitou pode cancelar)
-  - **Validação**: Permissions validadas, estado da transferência preservado
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
-
-#### **📱 Mobile (React Native)**
-
-##### **Telas Principais**
-- [ ] **Dashboard - Lista de OTs**
-  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
-  - **Descrição**: Tela inicial com OTs do motorista, filtros, pull-to-refresh
-  - **Validação**: Performance boa, estados de loading/error, navegação intuitiva
-  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
-
-- [ ] **Tela Criar OT**
-  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
-  - **Descrição**: Formulário com observações, captura de geolocalização automática
-  - **Validação**: Campos validados, GPS funciona, feedback visual para usuário
-  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
-
-- [ ] **Tela Detalhes da OT**
-  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
-  - **Descrição**: Visualização completa com timeline, arquivos, ações disponíveis
-  - **Validação**: Dados atualizados em tempo real, ações funcionais, UX intuitiva
-  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
-
-- [ ] **Tela Upload de Documentos**
-  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
-  - **Descrição**: Camera/galeria para capturar canhotos e fotos de entrega
-  - **Validação**: Camera funciona, upload em background, validações visuais
-  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
-
-- [ ] **Tela Transferir OT**
-  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
-  - **Descrição**: Seleção de motorista, motivo, confirmação com geolocalização
-  - **Validação**: Lista de motoristas atualizada, validações de permissão
-  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
-
-#### **🌐 Frontend Next.js (Preparação)**
+#### **🌐 Frontend (Next.js) - Preparação**
 - [ ] **Estrutura de páginas OTs**
   - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
   - **Descrição**: Estrutura básica de páginas para dashboard, detalhes, gestão
   - **Validação**: Routing funciona, SSR configurado, integração API preparada
   - **Arquivos**: `pages/ots/`, `components/ots/`, `lib/api.ts`
 
-**📊 Progresso Etapa 1.3**: 18/24 itens (75%) | **Status**: 🟨 Backend Completo - Mobile/Web Pendentes
+**📊 Progresso Etapa 1.3**: 11/12 itens (92%) | **Status**: 🟨 Backend + Mobile Completos
 
-*O backend está 100% funcional com todas as funcionalidades avançadas implementadas*
+*Backend 100% funcional, Mobile 100% implementado, apenas frontend web pendente*
 
 ---
 
 ### **✅ Etapa 1.4: Fluxo de Status e Geolocalização**
+*Objetivo: Sistema completo de transições de status com geolocalização e timeline*
 
-#### **Transições de Status**
-- [x] **Iniciada → Em Carregamento**
+#### **🔧 Backend - Sistema de Status**
+- [x] **Validações de transição de status**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Transição implementada com validações no modelo
-  - **Arquivos**: `core/models.py` - método `pode_transicionar_para()`
+  - **Descrição**: Método pode_transicionar_para() valida transições permitidas
+  - **Arquivos**: `core/models.py` - lógica de transições
 
-- [x] **Em Carregamento → Em Trânsito**
+- [x] **Transições: Iniciada → Em Carregamento → Em Trânsito → Entregue**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Transição validada e timeline registrada
-  - **Arquivos**: `core/models.py` - método `atualizar_status()`
+  - **Descrição**: Fluxo completo validado com timeline automática
+  - **Arquivos**: `core/models.py` - método atualizar_status()
 
-- [x] **Em Trânsito → Entregue/Entregue Parcialmente**
+- [x] **Cancelamento disponível em qualquer status**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Finalização com validação de documentos obrigatórios
-  - **Arquivos**: API `/api/ots/{id}/finalizar/`
+  - **Descrição**: Status CANCELADA disponível em qualquer momento não finalizado
+  - **Validação**: Lógica implementada e testada
 
-- [x] **Qualquer → Cancelada**
+#### **🔧 Backend - Geolocalização**
+- [x] **Campos de localização (origem/entrega)**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Cancelamento disponível em qualquer status não finalizado
-  - **Arquivos**: Validações implementadas no modelo
-
-#### **Geolocalização Básica**
-- [x] **Capturar localização na criação da OT**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Campos latitude/longitude_origem capturados automaticamente
+  - **Descrição**: latitude/longitude para origem e entrega com precisão decimal
   - **Arquivos**: `core/models.py` - campos de geolocalização
 
-- [x] **Capturar localização na finalização**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Localização de entrega registrada na finalização
-  - **Arquivos**: API finalizar OT com campos de localização
+- [x] **Captura automática na criação**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Mobile captura GPS automaticamente no CriarOTScreen
+  - **Validação**: Localização salva corretamente na criação
 
-- [ ] **Exibir localização no mapa (web)**
+- [x] **Captura obrigatória na finalização**
+  - **Data**: 09/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: FinalizarOTScreen obriga localização para finalizar entrega
+  - **Validação**: API valida presença de coordenadas na finalização
+
+#### **📱 Mobile - Timeline e Status**
+- [x] **Timeline visual na tela de detalhes**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: DetalhesOTScreen exibe timeline completa com ícones e datas
+  - **Validação**: Ordenação correta, dados da API, visual profissional
+
+- [x] **Atualização de status com observações**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: AtualizarStatusScreen permite observação em cada mudança
+  - **Validação**: Observações salvas na timeline, integração com API
+
+#### **🌐 Frontend - Preparação**
+- [ ] **Mapa interativo com localização das OTs**
   - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
   - **Descrição**: Interface web para visualizar trajeto no mapa
   - **Obs**: Dependente da implementação do frontend web
 
-#### **Sistema de Observações**
-- [x] **Campo observações em cada transição**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Todas as mudanças de status podem ter observação
-  - **Arquivos**: `core/models.py` - AtualizacaoOT com observação
-
-- [x] **Histórico de atualizações da OT**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Modelo AtualizacaoOT registra todas as mudanças
-  - **Arquivos**: Sistema completo de auditoria implementado
-
-- [x] **Timeline de eventos**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: API retorna timeline completa ordenada por data
-  - **Arquivos**: `core/serializers.py` - timeline na API de detalhes
-
-**📊 Progresso Etapa 1.4**: 9/10 itens (90%) | **Status**: 🟨 Quase Completo
+**📊 Progresso Etapa 1.4**: 8/9 itens (89%) | **Status**: 🟨 Backend + Mobile Completos
 
 ---
 
 ### **✅ Etapa 1.5: Upload de Documentos**
+*Objetivo: Sistema completo de upload e gerenciamento de documentos*
 
-#### **Sistema de Arquivos**
-- [x] **Upload de fotos (câmera/galeria)**
+#### **🔧 Backend - Sistema de Arquivos**
+- [x] **Modelo Arquivo completo**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: API aceita upload de imagens via multipart/form-data
-  - **Validação**: Tipos de arquivo validados, metadata capturada
-  - **Testado**: [x] Curl [ ] Frontend [ ] Mobile
+  - **Descrição**: Categorização por tipo, metadata automática, validações de formato
+  - **Arquivos**: `core/models.py` - modelo Arquivo com TIPO_ARQUIVO_CHOICES
 
-- [x] **Upload de canhotos assinados**
+- [x] **API de upload (/api/ots/{id}/upload/)**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Tipo específico CANHOTO para documentos assinados
-  - **Validação**: Categorização automática, obrigatório para finalizar
-  - **Testado**: [x] Curl [ ] Frontend [ ] Mobile
+  - **Descrição**: Upload multipart/form-data com validação de tipos
+  - **Validação**: Aceita imagens e PDFs, metadata capturada automaticamente
+  - **Testado**: [x] Curl [x] Mobile
 
-- [x] **Visualização de documentos**
+- [x] **Tipos de arquivo: CANHOTO, FOTO_ENTREGA, COMPROVANTE, etc.**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: API retorna URLs dos arquivos para visualização
-  - **Validação**: Metadata completa (nome, tamanho, tipo) disponível via API
-  - **Arquivos**: `core/models.py` - propriedades do modelo Arquivo
+  - **Descrição**: 5 tipos definidos com validações específicas por tipo
+  - **Validação**: Categorização automática funcionando
 
-- [x] **Tipos de arquivo (canhoto, foto_entrega, comprovante)**
+- [x] **Validação de formatos (JPG, PNG, PDF)**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Sistema categoriza por: CANHOTO, FOTO_ENTREGA, FOTO_OCORRENCIA, COMPROVANTE, OUTRO
-  - **Validação**: Validação de tipos no upload, estatísticas por tipo
-  - **Arquivos**: `core/models.py` - TIPO_ARQUIVO_CHOICES
+  - **Descrição**: Whitelist de tipos MIME, validação de extensão
+  - **Validação**: Rejeita formatos não permitidos com erro claro
 
-#### **Finalização de Entregas**
-- [x] **Marcar OT como entregue**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: API `/api/ots/{id}/finalizar/` marca como ENTREGUE
-  - **Validação**: Status atualizado, data_finalizacao preenchida
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+#### **📱 Mobile - Upload Funcional**
+- [x] **Câmera e galeria integradas**
+  - **Data**: 09/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: FinalizarOTScreen permite foto via câmera ou seleção da galeria
+  - **Validação**: Permissions funcionando, upload via ImagePicker
+  - **Arquivos**: `mobile/src/screens/ots/FinalizarOTScreen.tsx`
 
-- [x] **Upload obrigatório de documentos**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Sistema bloqueia finalização sem documentos anexados
-  - **Validação**: Erro 400 com mensagem clara sobre documentos obrigatórios
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+- [x] **Upload com feedback visual**
+  - **Data**: 09/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: Estados visuais: pendente → enviando → enviado → erro
+  - **Validação**: UX clara para upload, progress indicators
 
-- [x] **Observações de entrega**
+#### **🔧 Backend - Finalização**
+- [x] **Documentos obrigatórios para finalizar**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Campo observacoes_entrega obrigatório na finalização
-  - **Validação**: Dados de entrega capturados e armazenados
-  - **Arquivos**: `core/models.py` - campo observacoes_entrega
+  - **Descrição**: API /finalizar/ exige pelo menos 1 arquivo do tipo CANHOTO
+  - **Validação**: Finalização bloqueada sem documentos, erro claro
 
-- [x] **Confirmação de localização**
+- [x] **Propriedades calculadas (tem_canhoto, tem_foto_entrega)**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Campos latitude/longitude_entrega na finalização
-  - **Validação**: Localização real de entrega diferente do endereço planejado
-  - **Arquivos**: Campos de geolocalização de entrega implementados
+  - **Descrição**: Propriedades automáticas no modelo OT baseadas nos arquivos
+  - **Arquivos**: `core/models.py` - @property methods
 
 **📊 Progresso Etapa 1.5**: 8/8 itens (100%) | **Status**: ✅ Concluído
 
 ---
 
-### **✅ Etapa 1.6: Transferência entre Motoristas**
+### **✅ Etapa 1.6: Sistema de Transferências**
+*Objetivo: Transferência de OTs entre motoristas com aprovação e notificação*
 
-#### **Transferência Direta**
-- [x] **Motorista pode transferir sua OT**
+#### **🔧 Backend - Transferências Avançadas**
+- [x] **Modelo de Transferência completo**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: API `/api/ots/{id}/transferir/` permite transferência direta
-  - **Validação**: Apenas motorista atual pode transferir, validações de status
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+  - **Descrição**: Relacionamentos origem/destino, status, motivos, validações
+  - **Arquivos**: `core/models.py` - modelo TransferenciaOT
 
-- [x] **Seleção do motorista destino**
+- [x] **API de transferência (/api/ots/{id}/transferir/)**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Campo motorista_destino_id com validação de motorista ativo
-  - **Validação**: Apenas motoristas ativos são aceitos, validação de existência
-  - **Arquivos**: `core/serializers.py` - validação no serializer
+  - **Descrição**: Endpoint para solicitar transferência com validações
+  - **Validação**: Valida permissões, motorista destino, OT elegível
+  - **Testado**: [x] Postman
 
-- [x] **Registro de motivo da transferência**
+- [x] **Sistema de aceitação/rejeição**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Campo motivo obrigatório em todas as transferências
-  - **Validação**: Histórico completo de justificativas mantido
-  - **Arquivos**: `core/models.py` - campo motivo obrigatório
+  - **Descrição**: Motorista destino deve aceitar antes da transferência efetivar
+  - **Arquivos**: `/api/transferencias/{id}/aceitar/`, `/api/transferencias/{id}/rejeitar/`
 
-- [x] **Histórico de transferências**
+- [x] **Validações de elegibilidade**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Modelo TransferenciaOT registra toda transferência
-  - **Validação**: Timeline completa disponível, auditoria total
-  - **Arquivos**: Sistema completo de auditoria implementado
+  - **Descrição**: Apenas OTs não finalizadas podem ser transferidas
+  - **Validação**: Lógica no modelo, validações na API
 
-#### **Sistema de Aceitação (NOVO)**
-- [x] **Sistema AGUARDANDO_ACEITACAO**
+- [x] **Timeline de transferências**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Novo status para transferências que aguardam aceitação do motorista destino
-  - **Validação**: Fluxo completo: solicitação → aceitação/recusa → conclusão
-  - **Arquivos**: `core/models.py` - status AGUARDANDO_ACEITACAO
+  - **Descrição**: Todas as ações registradas na timeline da OT
+  - **Validação**: Histórico completo de solicitação/aceitação/rejeição
 
-- [x] **Aceitar/Recusar transferências**
+#### **📱 Mobile - Preparação**
+- [x] **Service de transferências**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: otService.transferirOT() e métodos de aceitação implementados
+  - **Arquivos**: `mobile/src/services/otService.ts`
+
+- [x] **Lista de motoristas para transferência**
+  - **Data**: 08/06/2025 | **Status**: ✅ Concluído
+  - **Descrição**: API /api/users/motoristas/ retorna lista filtrada
+  - **Validação**: Apenas motoristas ativos, excluindo o atual
+
+#### **🔧 Backend - APIs Auxiliares**
+- [x] **API de motoristas disponíveis**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: APIs específicas para aceitar/recusar transferências
-  - **Validação**: Apenas motorista destino pode aceitar/recusar
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+  - **Descrição**: Endpoint que lista motoristas elegíveis para receber transferências
+  - **Arquivos**: `/api/users/motoristas/`
 
-- [x] **Cancelar transferências**
+- [x] **API de transferências pendentes**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Quem solicitou pode cancelar transferência pendente
-  - **Validação**: Permissions validadas, estado preservado
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+  - **Descrição**: Lista transferências pendentes para o motorista atual
+  - **Arquivos**: `/api/transferencias/pendentes/`
 
-#### **Transferência por Aprovação (Logística)**
-- [x] **Solicitar transferência de OT de outro motorista**
+- [x] **Notificações básicas (preparação)**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Motoristas podem solicitar OT de outros (aguarda aprovação)
-  - **Validação**: Status PENDENTE para aprovação da logística
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+  - **Descrição**: Estrutura preparada para notificações push futuras
+  - **Obs**: Sistema de notificações será implementado na versão 2.0
 
-- [x] **Sistema de aprovação/rejeição**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Logística/admin pode aprovar/rejeitar solicitações
-  - **Validação**: Apenas logística/admin têm permissão, motivo obrigatório para rejeição
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
+#### **📱 Mobile - Funcionalidades**
+- [ ] **Tela Transferir OT**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Seleção de motorista, motivo, confirmação com geolocalização
+  - **Validação**: Lista de motoristas atualizada, validações de permissão
+  - **Testado em**: [ ] Android [ ] iOS [ ] Expo Go
 
-- [x] **Logs de auditoria**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: Todas as ações registradas com usuário, timestamp e observações
-  - **Validação**: Auditoria completa de quem fez o quê e quando
-  - **Arquivos**: Sistema integrado com AtualizacaoOT
+- [ ] **Tela Aceitar/Rejeitar Transferências**
+  - **Data**: ___/___/2025 | **Status**: ⚠️ Pendente
+  - **Descrição**: Lista de transferências pendentes, ações de aceitar/rejeitar
+  - **Validação**: Lista atualizada, ações funcionais, feedback adequado
 
-#### **Notificações e Interface**
-- [x] **API de transferências do usuário**
-  - **Data**: 06/06/2025 | **Status**: ✅ Concluído
-  - **Descrição**: `/api/ots/transferencias/minhas/` com categorização automática
-  - **Validação**: Separação clara: para aceitar, aguardando aprovação, etc.
-  - **Testado**: [x] Postman [ ] Frontend [ ] Mobile
-
-**📊 Progresso Etapa 1.6**: 11/11 itens (100%) | **Status**: ✅ Concluído
+**📊 Progresso Etapa 1.6**: 9/11 itens (82%) | **Status**: 🟨 Backend Completo
 
 ---
 
-### **⚠️ Etapa 1.7: Dashboard Next.js Completo**
+### **⚠️ Etapa 1.7: Dashboard Web Completo**
 *Objetivo: Painel web profissional para logística com SSR, performance otimizada e recursos avançados*
 
 #### **🌐 Frontend (Next.js 14+)**
 
 ##### **Setup e Configuração**
-- [ ] **Setup Next.js completo**
+- [ ] **Setup Next.js completo com App Router**
   - **Data**: ___/___/2025 | **Status**: 🔴 Não Iniciado
   - **Descrição**: App Router, TypeScript, Tailwind, ESLint, configurações de produção
   - **Validação**: Build sem erros, dev mode funciona, TypeScript configurado
 
-- [ ] **Autenticação integrada**
+- [ ] **Autenticação integrada com Django**
   - **Data**: ___/___/2025 | **Status**: 🔴 Não Iniciado
-  - **Descrição**: NextAuth.js ou sistema custom integrado com Django API
+  - **Descrição**: Sistema custom integrado com Django API JWT
   - **Validação**: Login persiste, middleware protege rotas, logout funciona
 
 ##### **Dashboard Principal**
@@ -553,80 +468,102 @@
   - **Descrição**: Image optimization, code splitting, SSR/ISR estratégico, caching
   - **Validação**: Lighthouse score >90, bundle size otimizado, loading rápido
 
-#### **🔧 Backend (Django - Ajustes)**
+#### **🔧 Backend (Django - APIs Específicas para Web)**
 - [x] **APIs otimizadas para dashboard**
   - **Data**: 06/06/2025 | **Status**: ✅ Concluído
   - **Descrição**: Endpoints agregados, paginação, filtros complexos, estatísticas
   - **Validação**: Response time <200ms, queries otimizadas, dados completos
-  - **Arquivos**: `/api/ots/stats/`, `/api/ots/buscar/` implementadas
+  - **Arquivos**: `/api/ots/stats/`, `/api/ots/export/`, filtros avançados
 
 **📊 Progresso Etapa 1.7**: 1/12 itens (8%) | **Status**: 🔴 Backend Pronto - Frontend Não Iniciado
 
-*APIs backend estão prontas para integração, falta implementar o frontend Next.js*
+*APIs backend estão prontas para integração, falta implementar todo o frontend Next.js*
 
 ---
 
-## 📊 **RESUMO DO MVP**
+## 📊 **RESUMO DO MVP - SITUAÇÃO ATUAL**
 
-| Etapa | Progresso | Status | Prazo Estimado |
-|-------|-----------|--------|----------------|
-| 1.1 - Infraestrutura | 6/6 (100%) | ✅ Concluído | ✅ Finalizado |
-| 1.2 - Autenticação | 7/7 (100%) | ✅ Concluído | ✅ Finalizado |
-| 1.3 - Core OTs | 18/24 (75%) | 🟨 Backend Completo | Mobile/Web pendentes |
-| 1.4 - Status/Geo | 9/10 (90%) | 🟨 Quase Completo | Mapa web pendente |
-| 1.5 - Documentos | 8/8 (100%) | ✅ Concluído | ✅ Finalizado |
-| 1.6 - Transferência | 11/11 (100%) | ✅ Concluído | ✅ Finalizado |
-| 1.7 - Painel Web | 1/12 (8%) | 🔴 Backend Pronto | Frontend não iniciado |
+| Etapa | Progresso | Status | Observações |
+|-------|-----------|--------|-------------|
+| 1.1 - Infraestrutura | 6/6 (100%) | ✅ Concluído | Base sólida estabelecida |
+| 1.2 - Autenticação | 7/7 (100%) | ✅ Concluído | Sistema completo funcionando |
+| 1.3 - Core OTs | 11/12 (92%) | 🟨 Backend + Mobile OK | Apenas frontend web pendente |
+| 1.4 - Status/Geo | 8/9 (89%) | 🟨 Backend + Mobile OK | Mapa web pendente |
+| 1.5 - Documentos | 8/8 (100%) | ✅ Concluído | Upload funcionando perfeitamente |
+| 1.6 - Transferências | 9/11 (82%) | 🟨 Backend Completo | Telas mobile pendentes |
+| 1.7 - Dashboard Web | 1/12 (8%) | 🔴 Não Iniciado | Maior pendência do projeto |
 
-**🎯 PROGRESSO TOTAL MVP**: 60/78 itens (77%) | **Tempo Restante**: ~2-3 semanas
+**🎯 PROGRESSO TOTAL MVP**: 50/65 itens (77%) | **Status**: 🟨 Backend Robusto + Mobile Avançado
 
 ---
 
 ## 🏆 **CONQUISTAS IMPORTANTES**
 
-### **✅ BACKEND COMPLETO E FUNCIONAL**
-- **Sistema de Autenticação**: 100% implementado com reset por código
-- **Sistema de OTs**: CRUD completo, validações, permissões
-- **Sistema de Transferências**: Fluxo avançado com aceitação
-- **Sistema de Arquivos**: Upload obrigatório para finalização
-- **APIs RESTful**: Todas as APIs documentadas e testadas
-- **Segurança**: Permissões por role, validações robustas
-- **Auditoria**: Timeline completa de todas as ações
+### **✅ BACKEND EXTREMAMENTE ROBUSTO**
+- **Sistema de Autenticação**: JWT com refresh, reset por código, middleware customizado
+- **Sistema de OTs**: CRUD completo com validações avançadas, permissões granulares
+- **Sistema de Transferências**: Fluxo de aprovação completo, timeline auditável
+- **Sistema de Arquivos**: Upload multipart, validações, categorização automática
+- **APIs RESTful**: Todas documentadas, testadas, otimizadas para performance
+- **Segurança**: Permissões por role, isolamento de dados, validações robustas
+- **Auditoria**: Timeline completa de todas as ações com usuário e timestamp
 
-### **📋 FUNCIONALIDADES AVANÇADAS IMPLEMENTADAS**
-- **Sistema de Aceitação**: Transferências requerem aceitação do motorista destino
-- **Documentos Obrigatórios**: Não é possível finalizar OT sem evidências
-- **Timeline Completa**: Auditoria de todas as mudanças com usuário e timestamp
-- **Validações Robustas**: Transições de status validadas, dados obrigatórios
-- **APIs Otimizadas**: Queries otimizadas, paginação, filtros avançados
+### **📱 MOBILE APP QUASE COMPLETO**
+- **Navegação Completa**: Stack navigation funcional entre todas as telas
+- **Telas Principais**: Lista, Criar, Detalhes, Atualizar Status, Finalizar - todas funcionais
+- **Integração API**: Service layer completo, tratamento de erros, estados de loading
+- **UX Premium**: Tailwind CSS, animações, feedback visual, geolocalização
+- **Upload de Arquivos**: Câmera/galeria integradas, upload com progress
+- **Autenticação**: Context global, persistência, navigation guards
 
 ### **🔧 ARQUITETURA SÓLIDA**
 - **Modelos Bem Estruturados**: Relacionamentos claros, propriedades calculadas
-- **Serializers Completos**: Validações, debug helpers, documentação
-- **Permissões Granulares**: Controle fino por role e ação
-- **Sistema de Debugging**: Endpoints de debug, logs detalhados
+- **Serializers Completos**: Validações, debug helpers, documentação automática
+- **Permissões Granulares**: Controle fino por role e ação específica
+- **Sistema de Debugging**: Endpoints de debug, logs detalhados, documentação
 
 ---
 
-## 🚀 **PRÓXIMOS PASSOS RECOMENDADOS**
+## 🚀 **PRÓXIMA ETAPA RECOMENDADA**
 
-### **📱 PRIORIDADE 1: Mobile (React Native)**
-- Implementar telas principais usando as APIs já prontas
-- Foco na UX para motoristas (usuários principais)
-- Upload de fotos via camera/galeria
-- Notificações push para transferências
+### **🎯 ETAPA 2.1: Finalização Mobile + Preparação Web**
+*Objetivo: Completar o app mobile e iniciar dashboard web*
 
-### **🌐 PRIORIDADE 2: Dashboard Web (Next.js)**
-- Dashboard para equipe de logística
-- Aprovação de transferências
-- Relatórios e métricas
-- Gestão de usuários
+#### **📱 PRIORIDADE ABSOLUTA - Mobile (2-3 dias)**
+- [ ] **Implementar Tela de Transferências**
+  - Seleção de motorista destino
+  - Motivo da transferência
+  - Confirmação com geolocalização
+  - Integração com API existente
 
-### **🔧 MELHORIAS FUTURAS**
-- Sistema de notificações em tempo real
-- WebSockets para atualizações live
-- Relatórios avançados com gráficos
-- Integração com sistemas externos
+- [ ] **Implementar Tela de Transferências Pendentes**
+  - Lista de transferências recebidas
+  - Aceitar/Rejeitar com feedback visual
+  - Navegação para detalhes da OT
+
+- [ ] **Polimento Final Mobile**
+  - Testes em dispositivo real
+  - Ajustes de UX/UI
+  - Loading states finais
+  - Error handling completo
+
+#### **🌐 PRIORIDADE ALTA - Dashboard Web (1-2 semanas)**
+- [ ] **Setup Next.js 14 completo**
+  - App Router configurado
+  - Autenticação com Django
+  - Middleware de proteção
+
+- [ ] **Dashboard principal**
+  - Cards de métricas
+  - Listagem de OTs
+  - Filtros básicos
+
+- [ ] **Integração com APIs**
+  - Client-side data fetching
+  - Estado global (Zustand/Redux)
+  - Error boundaries
+
+**⏱️ TEMPO ESTIMADO PARA MVP COMPLETO**: 2-3 semanas
 
 ---
 
@@ -645,15 +582,18 @@
 
 ### **🛠️ Comandos Úteis**
 ```bash
-# Iniciar servidor Django
+# Backend - Iniciar servidor Django
 cd backend
 python manage.py runserver
+python manage.py runserver 0.0.0.0:8000
 
-# Aplicar migrações
-python manage.py migrate
+# Mobile - Iniciar app React Native
+cd mobile
+npx expo start
 
-# Criar superusuário
-python manage.py createsuperuser
+# Frontend - Iniciar Next.js (quando implementado)
+cd frontend
+npm run dev
 
 # Testar APIs (instale REST Client no VS Code)
 # Abra os arquivos .rest e clique em "Send Request"
@@ -661,6 +601,6 @@ python manage.py createsuperuser
 
 ---
 
-**🎉 PARABÉNS! O backend está praticamente completo e muito bem estruturado!**
+**🎉 PARABÉNS! O projeto está 77% completo com uma base sólida!**
 
-O próximo passo é focar na implementação das interfaces mobile e web para aproveitar toda a robustez da API já implementada.
+**🎯 PRÓXIMO PASSO:** Finalizar as 2 telas pendentes no mobile e iniciar o dashboard web. O backend está robusto e as APIs estão prontas para consumo!

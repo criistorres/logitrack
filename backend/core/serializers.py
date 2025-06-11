@@ -59,6 +59,48 @@ class OrdemTransporteCreateSerializer(serializers.ModelSerializer):
             'endereco_entrega': {'required': True},
             'cidade_entrega': {'required': True},
         }
+
+    def validate(self, attrs):
+        """
+        ✅ VALIDAÇÃO PRINCIPAL: Verificar se motorista pode criar OT
+        
+        📋 REGRA DE NEGÓCIO:
+        - Motorista só pode ter 1 OT ativa (não finalizada) por vez
+        - Status ativos: INICIADA, EM_CARREGAMENTO, EM_TRANSITO
+        - Status finais: ENTREGUE, ENTREGUE_PARCIAL, CANCELADA
+        """
+        print(f"🚫 VALIDAÇÃO: Verificando se motorista pode criar OT")
+        
+        # Obter usuário da requisição
+        user = self.context['request'].user
+        print(f"🚫 Motorista: {user.email} (ID: {user.id})")
+        
+        # Verificar se já tem OT ativa
+        ots_ativas = OrdemTransporte.objects.filter(
+            motorista_atual=user,
+            status__in=['INICIADA', 'EM_CARREGAMENTO', 'EM_TRANSITO'],
+            ativa=True
+        ).select_related('motorista_atual')
+        
+        count_ativas = ots_ativas.count()
+        print(f"🚫 OTs ativas encontradas: {count_ativas}")
+        
+        if ots_ativas.exists():
+            ot_ativa = ots_ativas.first()
+            
+            print(f"❌ VALIDAÇÃO FALHOU: Motorista já tem OT ativa: {ot_ativa.numero_ot}")
+            print(f"❌ Status da OT ativa: {ot_ativa.status} ({ot_ativa.get_status_display()})")
+            
+            raise serializers.ValidationError({
+                'non_field_errors': [
+                    f'Você já possui uma Ordem de Transporte ativa '
+                    f'({ot_ativa.numero_ot} - {ot_ativa.get_status_display()}). '
+                    f'Finalize-a antes de criar uma nova.'
+                ]
+            })
+        
+        print(f"✅ VALIDAÇÃO PASSOU: Motorista pode criar nova OT")
+        return attrs
     
     def create(self, validated_data):
         """
@@ -724,6 +766,7 @@ class TransferenciaRejeitarSerializer(serializers.Serializer):
         instance.rejeitar(user, observacao)
         
         return instance
+        
 
 def debug_ot_serializer_flow(serializer_instance, step=""):
     """

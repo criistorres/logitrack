@@ -35,6 +35,7 @@ interface RegisterData {
   password_confirm: string;
   first_name: string;
   last_name: string;
+  full_name: string;
   cpf: string;
   phone?: string;
   role: 'motorista' | 'logistica' | 'admin';

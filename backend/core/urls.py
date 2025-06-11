@@ -27,6 +27,8 @@ from .views import (
     CancelarTransferenciaView,
     MinhasTransferenciasView,
     TransferenciaOTDetailView,
+
+    PodeCreateOTView,
     
     # Views de debugging
     debug_ot_info,
@@ -175,6 +177,10 @@ urlpatterns = [
     ),
     # GET /api/ots/buscar/ - Buscar OTs por critérios
     # Query params: numero_ot, cliente_nome, status, motorista_id, data_inicio, data_fim
+
+    path('pode-criar/', 
+         PodeCreateOTView.as_view(), 
+         name='ot-pode-criar'),
     
     path(
         'stats/',

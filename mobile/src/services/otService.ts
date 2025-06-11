@@ -166,6 +166,25 @@ export interface FinalizarOTResponse {
   };
   errors?: any;
 }
+
+export interface PodeCreateOTResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    pode_criar: boolean;
+    motivo: string;
+    ot_ativa?: {
+      id: number;
+      numero_ot: string;
+      status: string;
+      status_display: string;
+      cliente_nome: string;
+      data_criacao: string;
+    } | null;
+  };
+  errors?: any;
+}
+
 // ==============================================================================
 // 🚚 SERVIÇO DE ORDENS DE TRANSPORTE - CORRIGIDO
 // ==============================================================================
@@ -563,6 +582,45 @@ async verificarSeOTPodeSerFinalizada(otId: number): Promise<{
       motivos: ['Erro de conexão'],
       arquivos_count: 0
     };
+  }
+},
+
+/**
+ * 🚫 Verifica se motorista pode criar nova OT
+ * 
+ * ✅ REGRA: Motorista só pode ter 1 OT ativa por vez
+ * 
+ * @returns Promise com informação se pode criar
+ */
+async podeCreateOT(): Promise<PodeCreateOTResponse> {
+  try {
+    console.log('🚫 OTService: Verificando se pode criar OT...');
+    
+    const response = await apiService.get<any>('/ots/pode-criar/');
+    
+    console.log('🚫 OTService: Resposta da verificação:', response.data);
+    
+    return {
+      success: true,
+      message: 'Verificação realizada com sucesso',
+      data: response.data
+    };
+    
+  } catch (error: any) {
+    console.error('❌ OTService: Erro ao verificar se pode criar OT:', error);
+    
+    if (error.response?.data) {
+      return {
+        success: false,
+        message: error.response.data.message || 'Erro ao verificar permissão',
+        errors: error.response.data.errors || {}
+      };
+    } else {
+      return {
+        success: false,
+        message: 'Erro de conexão. Tente novamente.'
+      };
+    }
   }
 }
   
